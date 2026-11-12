@@ -176,7 +176,7 @@ def UnitCounit.round_counit.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v�
 -- an equation that has computed, FINDINGS.md, P8)
 def UnitCounit.round.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) :
-    Adjunction.toUnitCounit (C := C) (UnitCounit.toAdjunction U) = U :=
+    Adjunction.toUnitCounit (UnitCounit.toAdjunction U) = U :=
   let N : Type (max u₂ v₂) := NatTrans (G ⋙ F) (Fun.id D);
   let ε' : N := (Adjunction.toUnitCounit (UnitCounit.toAdjunction U)).counit;
   let η' : NatTrans (Fun.id C) (F ⋙ G) := (Adjunction.toUnitCounit (UnitCounit.toAdjunction U)).unit;
