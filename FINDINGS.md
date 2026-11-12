@@ -1,6 +1,6 @@
 # Findings
 
-What formalising category theory showed about Wiz, as of wiz master `50cd3e7`
+What formalising category theory showed about Wiz, as of wiz master `9596a24`
 (2026-11-12). Each entry: what happened, a minimal reproducer (the files under
 `repro/` are the reproducers, each checked with `wiz check -I src repro/NAME.wiz`), and
 what this library does instead. Severity:
@@ -11,21 +11,34 @@ what this library does instead. Severity:
 
 Timings are rough (single runs through `light` on a shared machine), not measurements.
 
-## Status at the pinned toolchain (2026-11-14)
+## Status (2026-11-12)
 
-The reproducers under `repro/` are checked at `50cd3e7`, and B1, B5, B6 and B7 still
-fail there (their expected output is today's error): on *this* toolchain they are open.
-Branch `cleanup` records them as fixed by wiz PRs #239/#230; those PRs are not in
-`50cd3e7` (its toolchain is a local build of master + #230 + #239 + #221 + #227), so
-that status does not transfer to this pin. B2–B4, G1–G8 and the papercuts are open here
-too. This branch advances **B2**: the repro is the minimal one-field version, the kernel
-rule that causes it is named (`Wiz/Core/Check.lean`, `.refl`), and its statement-level
-form is pinned by the new functor unit laws (`Fun.id_comp`, `Fun.comp_id` need
-`{ω C}`/`{ω D}`, src/Cats/Category.wiz, tests/laws.wiz).
+Fixed in wiz PRs that are not merged yet; branch `cleanup` of this repository uses them
+(a local toolchain: master + #230 + #239 + #221 + #227) and drops the workarounds:
+
+* **B1** (levels fixed by an implicit argument's type): fixed in #239. The explicit
+  levels on the lemmas (`eqTrans.{v₃} (eqCongr.{v₂, v₃} …)`) and the ascriptions on
+  constructor applications are gone; the error, where a level really is unknown, now
+  names the constant ("could not infer the universe level u of k").
+* **B5** (a structure-valued hole under a projection): fixed in #239 (a first-order
+  approximation, as Lean's for `Category.comp ?C`). `(C := C)` is gone, and `f ≫ g`
+  works; the proofs use it where a law isn't rewritten with.
+* **B6** (`rw` "expected: C ⥤ D, inferred: C ⥤ D"): fixed in #239. P11 (`rw` doesn't
+  try `rfl`) is not.
+* **B7** (a hole in a binder's type): fixed in #239; the `(D := Types)` in the Yoneda
+  binders is gone.
+* Not fixed: B2, G2 (proofs count usage; wiz agent prf-conv-2), B3, B4 (`max` levels:
+  `eqCongr2.{u, v, max u v}` stays), G1 (Logic's lemmas at `Type`; `congrArg` is
+  universe-polymorphic in lib/Nat.wiz since #221), G3–G8, the papercuts except as
+  noted. P9 is partly fixed (the parameters of `Equaliser.mk`/`Pullback.mk` are still
+  passed by name).
+
+The repro tests record the new state: `repro/b1-levels`, `b5-proj-hole` and
+`b7-binder-holes` check without errors; `b6-rw-functor` shows the rewritten goal.
 
 ## Bugs
 
-### B1. Universe levels fixed only by an implicit argument's type are never solved
+### B1. Universe levels fixed only by an implicit argument's type are never solved (fixed in wiz #239)
 
 "could not infer a universe level; add a universe parameter or annotation", pointing at
 the start of the declaration, for programs that are well typed and whose levels are
@@ -71,29 +84,17 @@ Both are all over `src/Cats/Category.wiz`. This is the most frequent failure so 
 ```
 structure P where
   a : Nat
+  b : Nat
 def lem0 (0 n : Nat) : n = n := refl n
-def ok {0 p : P} : p.a = p.a := lem0 p.a    -- accepted
+def ok {0 p : P} : p.b = p.b := lem0 p.b    -- accepted
 def bad {0 p : P} : p.a = p.a := refl p.a   -- rejected: cannot project p.1 … p has quantity 0
 ```
 
-(`repro/b2-refl-usage.wiz`; one field is enough.) `refl` is a proof and has no usage
-(CoreSpec §8.1), but its argument is checked in the unerased context, so a projection of
-an erased structure in it is refused. The kernel rule is `| .refl A a` in
-`Wiz/Core/Check.lean`: `let _ ← check ctx a (ctx.eval A)` — the ambient `ctx`, not an
-erased one. The projection rule then calls `projUsage`, which rejects a variable held at
-quantity 0 unless `ctx.erased` is set; an *erased position* is one scaled by 0
-(`Ctx.erasedAt`), which is why the *type* `p.a = p.a` is fine (types are checked erased)
-and why `lem0 p.a` is fine (the argument of a `0` binder is checked erased), but the
-data argument of `refl` is not.
-
-The same happens at the statement level: `F ⋙ Fun.id D = F` with `{D : Category}` fails
-before any proof, so the unit laws of functor composition need `{ω C}`/`{ω D}`
-(src/Cats/Category.wiz `Fun.id_comp`, `Fun.comp_id`; tests/laws.wiz).
-Here: the categories are bound at ω where `rfl` mentions them, and a projection is
-passed through a lemma whose binder is at 0 (`lem0 p.a`) when only the proof's argument
-needs it. The general fix is the one G2 asks for: check the arguments of a proof whose
-type is a proposition in the erased fragment (or `refl`'s argument, which is data only
-for the equation's indices).
+`refl` is a proof and has no usage (CoreSpec §8.1), but its argument is checked in the
+unerased context, so a projection of an erased structure in it is refused. The same
+happens for `rfl`: `F ⋙ Fun.id D = F := rfl` with `D` implicit is rejected ("cannot
+project (Fun.id D).1 … uses D, which has quantity 0"). (`repro/b2-refl-usage.wiz`)
+Here: the categories are bound at ω where `rfl` mentions them.
 
 ### B3. `rfl` at an equation of two categories takes over 2 GB
 
@@ -123,7 +124,7 @@ functions. Both sides are `l+1` after normalisation (`Level.normalize` exists, t
 kernel uses it). Here: explicit levels, or a `let AB : Type u := A × B` that fixes the
 level of the type.
 
-### B5. A structure-valued hole under a projection is never solved
+### B5. A structure-valued hole under a projection is never solved (fixed in wiz #239)
 
 ```
 def lem {ω C : Category} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
@@ -144,7 +145,7 @@ category is never found from `f : C.Hom X Y`.
 Here: `(C := C)` (`Product.unique`, the Yoneda embedding), and `C.comp f g` instead of
 `f ≫ g` everywhere.
 
-### B6. `rw` with a functor law: "expected: C ⥤ D, inferred: C ⥤ D"
+### B6. `rw` with a functor law: "expected: C ⥤ D, inferred: C ⥤ D" (fixed in wiz #239)
 
 In a goal about the unit of an adjunction, `rw (F.map_comp (U.unit.app X) (G.map f))`
 fails with "rewrite: type mismatch / expected: C ⥤ D / inferred: C ⥤ D"
@@ -154,7 +155,7 @@ P5, or a hole). `U.unit.app X : C.Hom ((Fun.id C).obj X) ((F ⋙ G).obj X)`, so 
 objects are only convertible with `X` and `G.obj (F.obj X)`. Here: every proof about
 adjunctions is a term, a chain of `eqTrans` and `eqCongr` (`src/Cats/Adjunction.wiz`).
 
-### B7. A hole in a binder's type is not solved before the body needs it
+### B7. A hole in a binder's type is not solved before the body needs it (fixed in wiz #239)
 
 ```
 def bad {ω C : Category} {X : C.Obj} {P : Category.op C ⥤ Types}
