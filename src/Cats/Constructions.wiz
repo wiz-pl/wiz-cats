@@ -1,0 +1,45 @@
+import Cats.Category
+-- New categories from old: the opposite, products, functor categories.
+
+-- ## The opposite category
+
+def Category.op.{u, v} (C : Category.{u, v}) : Category.{u, v} :=
+  Category.mk C.Obj (fun X Y => C.Hom Y X) C.id (fun f g => C.comp g f)
+    (fun f => C.comp_id f) (fun f => C.id_comp f) (fun f g h => eqSymm.{v} (C.assoc h g f))
+
+-- taking the opposite twice gives the category back, definitionally
+-- (`refl C`: `rfl` takes over 2 GB here, FINDINGS.md, B3; `C.op.op` is P10)
+def Category.op_op.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := refl C
+
+-- ## Products
+
+def Category.prod.{u₁, v₁, u₂, v₂} (C : Category.{u₁, v₁}) (D : Category.{u₂, v₂}) :
+    Category.{max u₁ u₂, max v₁ v₂} :=
+  Category.mk (C.Obj × D.Obj) (fun X Y => C.Hom X.1 Y.1 × D.Hom X.2 Y.2)
+    (fun X => (C.id X.1, D.id X.2)) (fun f g => (C.comp f.1 g.1, D.comp f.2 g.2))
+    -- (an equation of pairs needs `castRefl`: `pairEq`, FINDINGS.md, G6)
+    (fun f => pairEq.{v₁, v₂} (C.id_comp f.1) (D.id_comp f.2))
+    (fun f => pairEq.{v₁, v₂} (C.comp_id f.1) (D.comp_id f.2))
+    (fun f g h => pairEq.{v₁, v₂} (C.assoc f.1 g.1 h.1) (D.assoc f.2 g.2 h.2))
+
+-- ## Functor categories
+
+-- the laws, pointwise from `D`'s (NatTrans.ext is the computed equation itself)
+def NatTrans.id_vcomp.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {F G : C ⥤ D}
+    (0 α : NatTrans F G) : NatTrans.vcomp (NatTrans.id F) α = α :=
+  ⟨fun X => D.id_comp (α.app X), (), fun _ => ()⟩
+def NatTrans.vcomp_id.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {F G : C ⥤ D}
+    (0 α : NatTrans F G) : NatTrans.vcomp α (NatTrans.id G) = α :=
+  ⟨fun X => D.comp_id (α.app X), (), fun _ => ()⟩
+def NatTrans.vcomp_assoc.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {F G H K : C ⥤ D}
+    (0 α : NatTrans F G) (0 β : NatTrans G H) (0 γ : NatTrans H K) :
+    NatTrans.vcomp (NatTrans.vcomp α β) γ = NatTrans.vcomp α (NatTrans.vcomp β γ) :=
+  ⟨fun X => D.assoc (α.app X) (β.app X) (γ.app X), (), fun _ => ()⟩
+
+def Category.functors.{u₁, v₁, u₂, v₂} (C : Category.{u₁, v₁}) (D : Category.{u₂, v₂}) :
+    Category.{max (max u₁ v₁) (max u₂ v₂), max u₁ v₂} :=
+  Category.mk (C ⥤ D) (fun F G => NatTrans F G) (fun F => NatTrans.id F) (fun α β => NatTrans.vcomp α β)
+    -- (separate lemmas: in a field of `Category.mk` the expected type still has holes
+    -- for `id` and `comp`, so the equation hasn't computed: FINDINGS.md, P9)
+    (fun α => NatTrans.id_vcomp α) (fun α => NatTrans.vcomp_id α)
+    (fun α β γ => NatTrans.vcomp_assoc α β γ)

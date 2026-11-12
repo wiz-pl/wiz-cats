@@ -1,0 +1,206 @@
+# Findings
+
+What formalising category theory showed about Wiz, as of wiz master `9596a24`
+(2026-11-12). Each entry: what happened, a minimal reproducer (the files under
+`repro/` are the reproducers, each checked with `wiz check -I src repro/NAME.wiz`), and
+what this library does instead. Severity:
+
+* **bug**: wrong behaviour (a correct program rejected, or a wrong one accepted);
+* **gap**: something abstract mathematics needs that Wiz lacks;
+* **papercut**: works, but costs time.
+
+Timings are rough (single runs through `light` on a shared machine), not measurements.
+
+## Bugs
+
+### B1. Universe levels fixed only by an implicit argument's type are never solved
+
+"could not infer a universe level; add a universe parameter or annotation", pointing at
+the start of the declaration, for programs that are well typed and whose levels are
+determined. Two shapes (`repro/b1-levels.wiz`):
+
+```
+structure Box.{u, v} where
+  T : Type u
+  R : T → T → Type v
+  r : (x : T) → R x x
+structure S2.{u, v} (B : Box.{u, v}) where
+  law : (x : B.T) → B.r x = B.r x
+def ok.{u, v} (B : Box.{u, v}) (s : S2 B) : (x : B.T) → B.r x = B.r x := fun x => eqSymm (s.law x)
+-- rejected: the same term as a constructor argument
+def bad.{u, v} (B : Box.{u, v}) (s : S2 B) : S2 B := S2.mk (fun x => eqSymm (s.law x))
+```
+
+(`eqSymm.{u}` is `Eq.symm` at `Type u`, `src/Cats/Eq.wiz`.) And, with no expected type:
+
+```
+-- rejected
+def e₁ … : Fun.mk o m₁ i₁ c₁ = Fun.mk o m₂ i₂ c₂ := …
+-- accepted
+def e₂ … : (Fun.mk o m₁ i₁ c₁ : C ⥤ D) = Fun.mk o m₂ i₂ c₂ := …
+```
+
+Likely cause (from reading `Wiz/Elab/Command.lean`, `solveSortConstraints`):
+metavariables are untyped, so solving `?C := C` for `{C : Category.{?a, ?b}}` never
+unifies `Category.{?a, ?b}` with the type of `C`, and `?a`, `?b` stay unsolved unless
+the result type pins them. Only holes of type `Sort ?l` get a recorded constraint, which
+is re-checked after elaboration by inferring the solution's type; that loop runs twice,
+skips solutions that still contain holes, and ignores solutions whose type it can't
+infer. The error gives no position inside the declaration and doesn't say which
+constant's level is missing, so finding the culprit took a bisection with an
+`axiom sorry`, whose own level then hit the same bug unless written `sorry.{0}`.
+
+Here: explicit levels on the lemmas inside constructor arguments
+(`eqTrans.{v₃} (eqCongr.{v₂, v₃} …)`) and type ascriptions on constructor applications.
+Both are all over `src/Cats/Category.wiz`. This is the most frequent failure so far.
+
+### B2. `refl x` checks `x` as if it were used at ω
+
+```
+structure P where
+  a : Nat
+  b : Nat
+def lem0 (0 n : Nat) : n = n := refl n
+def ok {0 p : P} : p.b = p.b := lem0 p.b    -- accepted
+def bad {0 p : P} : p.a = p.a := refl p.a   -- rejected: cannot project p.1 … p has quantity 0
+```
+
+`refl` is a proof and has no usage (CoreSpec §8.1), but its argument is checked in the
+unerased context, so a projection of an erased structure in it is refused. The same
+happens for `rfl`: `F ⋙ Fun.id D = F := rfl` with `D` implicit is rejected ("cannot
+project (Fun.id D).1 … uses D, which has quantity 0"). (`repro/b2-refl-usage.wiz`)
+Here: the categories are bound at ω where `rfl` mentions them.
+
+### B3. `rfl` at an equation of two categories takes over 2 GB
+
+```
+def Category.op.{u, v} (C : Category.{u, v}) : Category.{u, v} := …   -- src/Cats/Constructions.wiz
+def slow.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := rfl     -- killed: 2 GB, 17 s
+def fast.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := refl C  -- 0.5 s, 100 MB
+```
+
+The two sides are convertible (structure η), and `refl C` is accepted at once. What
+blows up is the *computed equation*: `#check Category.op_op` (of the `refl C` version)
+is killed the same way, so it is the quotation of `C.op.op = C` computed to a Σ over the
+seven fields, each with a cast along a `transp` whose motive is the rest of the Σ type,
+which contains the equations of the later fields, and so on: the size grows
+exponentially with the number of dependent fields. The elaborator's `rfl` (13n) reads
+the sides back out of that computed equation, hence the difference. (The equation of
+two functors, four fields, already prints as 12 000 characters, G5.) Not in `repro/` (it would take the test runner's memory); the lines above
+reproduce it.
+Here: `refl C`.
+
+## Gaps
+
+### G1. The equality lemmas of lib/Logic.wiz are at `Type` only
+
+`Eq.symm`, `Eq.trans`, `Eq.congrArg`, `funext`, `congrFun` take `{A : Type}`, so every
+equation between morphisms of a category whose hom-types live in `Type v` needs its own
+copy. Here: `src/Cats/Eq.wiz` (`eqSymm.{u}`, `eqTrans`, `eqCongr`, `eqCongr2`, `eqJ`).
+
+### G2. A proof uses the variables it passes to unerased arguments
+
+Proofs are irrelevant and erased, but usage checking still counts them: a variable at
+quantity 0 can't be passed to a lemma's ω argument, even inside a proof
+(`repro/g2-proof-usage.wiz`).
+
+```
+def lem (n : Nat) : n = n := refl n
+def r {0 n : Nat} : n = n := lem n    -- rejected: n declared with quantity 0 but used ω
+```
+
+In category theory almost everything implicit is erased (`{F G H : C ⥤ D}` in the
+vertical composite of natural transformations), and every law is applied to morphisms
+built from them (`D.assoc (F.map f) (α.app X) (β.app Y)`), so with the obvious
+signatures every proof about natural transformations is rejected. Here: every law
+takes its morphisms at 0 (`id_comp : {X Y : Obj} → (0 f : Hom X Y) → …`), every
+equality lemma takes its proofs at 0 (`eqTrans (0 e₁ : a = b) (0 e₂ : b = c)`), and
+categories whose data is used are bound `{ω C : Category}`. Checking the arguments of
+an application whose type is a proposition in the erased context would remove the need
+for all of it (Lean erases proofs wholesale).
+
+### G3. Implicit binders default to quantity 0, so `{C : Category}` can't be projected
+
+`def Category.cmp {C : Category} {X Y Z : C.Obj} (f : C.Hom X Y) (g : C.Hom Y Z) := C.comp f g`
+is rejected ("cannot project C.2 … C, which has quantity 0 … a structure can't be held
+at a quantity other than ω yet"): a bundled category is data, and its implicit binders
+must be written `{ω C : Category}`. The message is accurate but long and talks about
+linear structures, which aren't involved.
+
+### G4. `transp` can't take an equation that has computed
+
+`transp P p e` needs the type of `e` to be an equation as written. At a function type
+or a structure an equation always computes (`m₁ = m₂` is `(0 X) → (0 Y) → (0 f) → …`),
+so `transp` reports "expected a proof of an equation, got (0 X : …) → …". Here: `eqJ`,
+J as a function, whose argument has the type `a = b` at a variable type.
+
+### G5. Equality of functors: the cast in the computed equation is stuck
+
+`F = G` for `F G : C ⥤ D` computes to a Σ whose second component is
+`cast (…) (F.map (cast X) (cast Y) (cast f)) = G.map X Y f`: the arguments of `map` are
+cast backwards along `C.Obj = C.Obj`, and the result forwards along a `transp` over the
+whole remaining Σ type (the printed equation is about 12 000 characters). Even when
+`F.obj ≡ G.obj` none of the casts compute (the types are variables, and regularity holds
+only at inert types), and `castRefl` removes only the outer one, not the dependent
+casts of the arguments. Here: `Fun.ext` proves two functors with the same object map
+equal from an equation of their maps, by J and proof irrelevance, without `castRefl`
+(DESIGN.md). Functors whose object maps are only propositionally equal are not handled
+yet.
+
+### G6. Equality of pairs needs an axiom
+
+`(a, b) = (a', b')` at `A × B` computes to `(0 e : a = a') × (cast B B ê b = b')`, and
+the cast at a type variable `B` is stuck, so a product of categories can't prove its
+laws from its factors' without `castRefl`. Here: `pairEq` (`src/Cats/Eq.wiz`), by one
+`castRefl`; the product category depends on the axiom. A non-dependent pair is the
+commonest case of all (Σ types whose second component doesn't mention the first), and
+the cast `cast B B ê b` is between syntactically equal types; regularity just for a
+non-dependent Σ (the motive of `ê` doesn't use its variable) would remove the axiom
+from every such proof.
+
+## Papercuts
+
+* **P1.** `max` takes exactly two levels: `Type (max u₁ v₁ u₂ v₂)` is "function expected
+  Type : Type 1"; write `max (max u₁ v₁) (max u₂ v₂)`.
+* **P2.** A structure's universe is inferred too large: `NatTrans F G` (data
+  `app : (X : C.Obj) → D.Hom (F X) (G X)` and a proof field quantifying over `C.Hom X Y`)
+  is put in `Type (max (max u₁ v₂) (max u₁ v₁))`: the proof field's binders count.
+  Here: an explicit `: Type (max u₁ v₂)`.
+* **P3.** An equation of structures ends in the marker component: `α = β` for natural
+  transformations is `(0 e : (0 X) → α.app X = β.app X) × True × ((0 fields✝ : Enum
+  [fields✝]) → True)`, so `NatTrans.ext` is `(h, (), fun _ => ())`, not `h`.
+* **P4.** Errors print fields as projections: `G.2.1 (F.1 X) (F.1 X) (F.2.1 X X (C.2.2.1 X))`
+  for `G.map (F.map (C.id X))`. With five-field structures this is hard to read.
+* **P5.** `#check Types` prints `Types : Category`, without the levels; `#check @NatTrans.ext`
+  prints its result type as the computed equation (`(0 e : (0 X : C.1) → α.1 X = β.1 X) × …`),
+  not as `α = β`.
+* **P6.** `@f.{u}` does not parse (`@castRefl.{v₂} A e a`); named arguments
+  (`castRefl.{v₂} (A := …) e a`) work.
+* **P7.** A local whose type has implicit binders (`m₁ : {X Y : C.Obj} → C.Hom X Y → …`),
+  elaborated against a hole (`⟨m₁, refl m₁⟩` with no expected type), is eta-expanded
+  with fresh holes for the implicits that aren't tied to the new binders:
+  `fun X Y => m₁ ?m108 ?m109`; `fun X Y f => hmap f` gives `hmap ?a ?b f`. Here:
+  `@hmap X Y f`.
+* **P8.** The anonymous constructor `⟨…⟩` does not see that its expected type, an
+  equation at a Σ, computes to a Σ ("needs a structure, a pair … not (m₁, …) = (m₂, …)");
+  a tuple `(a, b)` is elaborated without the expected type and then fails on the
+  quantities ("quantity mismatch": `(X : C.1) → …` against `(0 X : C.1) → …`).
+
+* **P9.** Holes in an application's arguments are not solved from the expected type
+  first: `NatTrans.ext _ _ h` against `vcomp (id F) α = α` fails with "outside the
+  pattern fragment" (`h`'s type `?α.1 X = ?β.1 X` is unified before the result type).
+  And in a field of `Category.mk` the expected type of a law still has holes for the
+  earlier fields (`?m3 C D X X Y (?m2 C D X) α = α`), so the equation has not computed
+  and `⟨…⟩` rejects it. Here: the laws of the functor category are separate lemmas.
+* **P10.** Dot notation through a function that returns a structure: `C.op.op` is "no
+  field 'op' in a value of type (0 fields✝ : Enum [fields✝]) → Unit…": the second `.op`
+  is looked up in the Σ's last component. Here: `Category.op (Category.op C)`.
+
+## What works well
+
+* `structure Category.{u, v}` with dependent fields, implicit-binder fields and proof
+  fields; `Types.{u} : Category.{u+1, u}` with all three laws by `rfl`.
+* `NatTrans.ext` is (almost) the identity: funext and proof irrelevance are definitional.
+* Associativity of functor composition, `(F ⋙ G) ⋙ H = F ⋙ (G ⋙ H)`, is `rfl`
+  (structure η in conversion).
+* Checking is fast: `src/Cats/Category.wiz` checks in under a second.

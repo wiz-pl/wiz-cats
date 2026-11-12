@@ -1,0 +1,5 @@
+-- test: check
+import Prelude
+-- FINDINGS.md, G2: `r` is rejected ("n declared with quantity 0 but used ω").
+def lem (n : Nat) : n = n := refl n
+def r {0 n : Nat} : n = n := lem n

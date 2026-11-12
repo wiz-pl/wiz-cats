@@ -1,0 +1,12 @@
+-- test: check
+import Cats.Eq
+-- FINDINGS.md, B1: `bad` is rejected with "could not infer a universe level".
+structure Box.{u, v} where
+  T : Type u
+  R : T → T → Type v
+  r : (x : T) → R x x
+structure S2.{u, v} (B : Box.{u, v}) where
+  law : (x : B.T) → B.r x = B.r x
+def ok.{u, v} (B : Box.{u, v}) (s : S2 B) : (x : B.T) → B.r x = B.r x := fun x => eqSymm (s.law x)
+def bad.{u, v} (B : Box.{u, v}) (s : S2 B) : S2 B := S2.mk (fun x => eqSymm (s.law x))
+def workaround.{u, v} (B : Box.{u, v}) (s : S2 B) : S2 B := S2.mk (fun x => eqSymm.{v} (s.law x))

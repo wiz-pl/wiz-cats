@@ -1,0 +1,9 @@
+-- test: check
+import Prelude
+-- FINDINGS.md, B2: `bad` is rejected ("cannot project p.1 … quantity 0"), `ok` is not.
+structure P where
+  a : Nat
+  b : Nat
+def lem0 (0 n : Nat) : n = n := refl n
+def ok {0 p : P} : p.b = p.b := lem0 p.b
+def bad {0 p : P} : p.a = p.a := refl p.a

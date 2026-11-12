@@ -1,0 +1,10 @@
+-- test: check
+import Cats.Constructions
+-- The types of the main definitions (the `#check`s print them; the levels are not shown,
+-- FINDINGS.md, P5).
+#check Types
+#check @Fun.comp
+#check @NatTrans.ext
+#check @Fun.ext
+#check Category.prod
+#check Category.functors

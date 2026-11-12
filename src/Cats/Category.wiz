@@ -1,0 +1,111 @@
+import Cats.Eq
+-- Categories, functors, natural transformations (DESIGN.md).
+--
+-- The laws take their arguments at quantity 0: a proof that passes a variable to an
+-- unerased argument uses it, even though the proof itself is erased (FINDINGS.md, G2), so
+-- with ω binders every proof about an implicit (erased) functor would be rejected.
+
+structure Category.{u, v} where
+  Obj : Type u
+  Hom : Obj → Obj → Type v
+  id : (X : Obj) → Hom X X
+  -- diagrammatic order: `comp f g` is "f, then g"
+  comp : {X Y Z : Obj} → Hom X Y → Hom Y Z → Hom X Z
+  id_comp : {X Y : Obj} → (0 f : Hom X Y) → comp (id X) f = f
+  comp_id : {X Y : Obj} → (0 f : Hom X Y) → comp f (id Y) = f
+  assoc : {W X Y Z : Obj} → (0 f : Hom W X) → (0 g : Hom X Y) → (0 h : Hom Y Z) →
+    comp (comp f g) h = comp f (comp g h)
+
+-- `f ≫ g`, with the category found from the type of `f`
+def Category.cmp.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (f : C.Hom X Y) (g : C.Hom Y Z) : C.Hom X Z :=
+  C.comp f g
+infixr:80 " ≫ " => Category.cmp
+
+-- ## Functors
+
+structure Fun.{u₁, v₁, u₂, v₂} (C : Category.{u₁, v₁}) (D : Category.{u₂, v₂}) : Type (max (max u₁ v₁) (max u₂ v₂)) where
+  obj : C.Obj → D.Obj
+  map : {X Y : C.Obj} → C.Hom X Y → D.Hom (obj X) (obj Y)
+  map_id : (0 X : C.Obj) → map (C.id X) = D.id (obj X)
+  map_comp : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) →
+    map (C.comp f g) = D.comp (map f) (map g)
+infixr:26 " ⥤ " => Fun
+
+def Fun.id.{u, v} (C : Category.{u, v}) : C ⥤ C :=
+  Fun.mk (fun X => X) (fun f => f) (fun X => rfl) (fun f g => rfl)
+
+def Fun.comp.{u₁, v₁, u₂, v₂, u₃, v₃} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} {E : Category.{u₃, v₃}}
+    (F : C ⥤ D) (G : D ⥤ E) : C ⥤ E :=
+  Fun.mk (fun X => G.obj (F.obj X)) (fun f => G.map (F.map f))
+    -- (the explicit levels: FINDINGS.md, B1)
+    (fun X => eqTrans.{v₃} (eqCongr.{v₂, v₃} (fun h => G.map h) (F.map_id X)) (G.map_id (F.obj X)))
+    (fun f g => eqTrans.{v₃} (eqCongr.{v₂, v₃} (fun h => G.map h) (F.map_comp f g)) (G.map_comp (F.map f) (F.map g)))
+infixr:80 " ⋙ " => Fun.comp
+
+-- ## Equality of functors
+--
+-- An equation of two functors computes to the Σ of the equations of `obj` and of a cast
+-- of `map` (the laws are proofs, so they drop out). Without regularity the cast is stuck
+-- at the type variable `D.Hom` even when the objects agree, and it casts the arguments
+-- of `map` too (CoreSpec §8.4), so the Σ can't be proved component by component
+-- (FINDINGS.md, G5). Instead: for two functors with the same object map, an equation of
+-- the maps is turned into one of the functors by J (`eqJ`), along a functor whose laws
+-- are transported from the first (`Fun.mkOf`). Proof irrelevance makes `Fun.mkOf … m₁ _`
+-- convertible with the first functor and `Fun.mkOf … m₂ _` with the second. No axiom.
+
+def Fun.MapT.{u₁, v₁, u₂, v₂} (C : Category.{u₁, v₁}) (D : Category.{u₂, v₂}) (o : C.Obj → D.Obj) : Type (max u₁ (max v₁ v₂)) :=
+  {X Y : C.Obj} → C.Hom X Y → D.Hom (o X) (o Y)
+-- the functor `(o, m)` with the laws of `(o, m₁)`, given `m₁ = m`
+def Fun.mkOf.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} (o : C.Obj → D.Obj)
+    (m₁ : Fun.MapT C D o)
+    (i₁ : (0 X : C.Obj) → m₁ (C.id X) = D.id (o X))
+    (c₁ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₁ (C.comp f g) = D.comp (m₁ f) (m₁ g))
+    (m : Fun.MapT C D o) (0 h : m₁ = m) : C ⥤ D :=
+  Fun.mk o m
+      (fun X => eqTrans.{v₂} (eqSymm.{v₂} (h _ _ (C.id X))) (i₁ X))
+      (fun f g => eqTrans.{v₂} (eqSymm.{v₂} (h _ _ (C.comp f g)))
+        (eqTrans.{v₂} (c₁ f g) (eqCongr2.{v₂, v₂, v₂} (fun a b => D.comp a b) (h _ _ f) (h _ _ g))))
+def Fun.mapEq.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} (o : C.Obj → D.Obj)
+    (m₁ m₂ : Fun.MapT C D o) (hmap : {X Y : C.Obj} → (0 f : C.Hom X Y) → m₁ f = m₂ f) : m₁ = m₂ :=
+  fun X Y f => @hmap X Y f
+def Fun.ext.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} (o : C.Obj → D.Obj)
+    (m₁ m₂ : Fun.MapT C D o)
+    (i₁ : (0 X : C.Obj) → m₁ (C.id X) = D.id (o X)) (i₂ : (0 X : C.Obj) → m₂ (C.id X) = D.id (o X))
+    (c₁ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₁ (C.comp f g) = D.comp (m₁ f) (m₁ g))
+    (c₂ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₂ (C.comp f g) = D.comp (m₂ f) (m₂ g))
+    (hmap : {X Y : C.Obj} → (0 f : C.Hom X Y) → m₁ f = m₂ f) :
+    (Fun.mk o m₁ i₁ c₁ : C ⥤ D) = Fun.mk o m₂ i₂ c₂ :=
+  eqJ.{max u₁ (max v₁ v₂)} (A := Fun.MapT C D o) (a := m₁) (fun (0 m : Fun.MapT C D o) (0 h : m₁ = m) => (Fun.mk o m₁ i₁ c₁ : C ⥤ D) = Fun.mkOf.{u₁, v₁, u₂, v₂} o m₁ i₁ c₁ m h) (refl (Fun.mk o m₁ i₁ c₁ : C ⥤ D))
+    (Fun.mapEq.{u₁, v₁, u₂, v₂} (C := C) (D := D) o m₁ m₂ hmap)
+
+-- ## Natural transformations
+
+structure NatTrans.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} (F G : C ⥤ D) : Type (max u₁ v₂) where
+  app : (X : C.Obj) → D.Hom (F.obj X) (G.obj X)
+  naturality : {X Y : C.Obj} → (0 f : C.Hom X Y) → D.comp (F.map f) (app Y) = D.comp (app X) (G.map f)
+
+-- Two natural transformations are equal when their components are: the equation of
+-- the structures computes to that (the naturality proofs are irrelevant), so this is
+-- the identity function.
+def NatTrans.ext.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} {F G : C ⥤ D}
+    (α β : NatTrans F G) (h : (X : C.Obj) → α.app X = β.app X) : α = β := (h, (), fun _ => ())
+
+def NatTrans.id.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} (F : C ⥤ D) : NatTrans F F :=
+  NatTrans.mk (fun X => D.id (F.obj X))
+    (fun f => eqTrans.{v₂} (D.comp_id (F.map f)) (eqSymm.{v₂} (D.id_comp (F.map f))))
+
+-- vertical composite
+def NatTrans.vcomp.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {F G H : C ⥤ D}
+    (α : NatTrans F G) (β : NatTrans G H) : NatTrans F H :=
+  NatTrans.mk (fun X => D.comp (α.app X) (β.app X))
+    (fun f => eqTrans.{v₂} (eqSymm.{v₂} (D.assoc (F.map f) (α.app _) (β.app _)))
+      (eqTrans.{v₂} (eqCongr.{v₂, v₂} (fun k => D.comp k (β.app _)) (α.naturality f))
+      (eqTrans.{v₂} (D.assoc (α.app _) (G.map f) (β.app _))
+      (eqTrans.{v₂} (eqCongr.{v₂, v₂} (fun k => D.comp (α.app _) k) (β.naturality f))
+        (eqSymm.{v₂} (D.assoc (α.app _) (β.app _) (H.map f)))))))
+
+-- ## The category of types
+
+def Types.{u} : Category.{u+1, u} :=
+  Category.mk (Type u) (fun A B => A → B) (fun A a => a) (fun f g a => g (f a))
+    (fun f => rfl) (fun f => rfl) (fun f g h => rfl)

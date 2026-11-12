@@ -1,0 +1,1 @@
+repro/g2-proof-usage.wiz:5:1: error: kernel rejected r: variable n declared with quantity 0 but used ω

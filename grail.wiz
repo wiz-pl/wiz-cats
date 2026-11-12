@@ -1,0 +1,9 @@
+import Grail
+-- `grail build`: check the library (src/Cats/*.wiz).
+-- `grail test`: tests/ (what the library proves, as `#check`s) and repro/ (the
+-- reproducers of FINDINGS.md, whose expected output is today's error: a repro test that
+-- starts failing means Wiz changed, probably fixed, that finding).
+def package : Package := Package.new "cats"
+  |> Package.lib "lib" "src"
+  |> Package.tests "tests" "tests"
+  |> Package.tests "repro" "repro"

@@ -1,0 +1,29 @@
+import Logic
+-- Every proof argument is at quantity 0: proofs are irrelevant, and a proof passed to an
+-- unerased argument counts as a use of every variable in it (FINDINGS.md, G2).
+-- Equality lemmas at any universe. lib/Logic.wiz has `Eq.symm`, `Eq.trans` and
+-- `Eq.congrArg` only at `Type` (FINDINGS.md, G1); categories need them at `Type u`.
+-- `transp` is the eliminator (J into propositions); these are its usual shapes.
+
+def eqSymm.{u} {A : Type u} {a b : A} (0 e : a = b) : b = a :=
+  transp (fun b _ => b = a) (refl a) e
+def eqTrans.{u} {A : Type u} {a b c : A} (0 e₁ : a = b) (0 e₂ : b = c) : a = c :=
+  transp (fun c _ => a = c) e₁ e₂
+def eqCongr.{u, v} {A : Type u} {B : Type v} (0 f : A → B) {a b : A} (0 e : a = b) : f a = f b :=
+  transp (fun b _ => f a = f b) (refl (f a)) e
+def eqCongr2.{u, v, w} {A : Type u} {B : Type v} {C : Type w} (0 f : A → B → C)
+    {a a' : A} {b b' : B} (0 e₁ : a = a') (0 e₂ : b = b') : f a b = f a' b' :=
+  eqTrans (eqCongr (fun x => f x b) e₁) (eqCongr (fun y => f a' y) e₂)
+-- J into propositions, as a function. The `transp` form needs the type of its proof
+-- to be an equation that has not computed; an equation at a function type or a
+-- structure has always computed (FINDINGS.md, G4), so it can't be passed to `transp`
+-- directly, but it can be passed to this.
+def eqJ.{u} {A : Type u} {a : A} (0 P : (0 b : A) → (0 _ : a = b) → Prop) (0 p : P a (refl a)) {b : A} (0 e : a = b) : P b e :=
+  transp P p e
+-- Equality of pairs from equality of the components. The equation of two pairs computes
+-- to `(0 e : a = a') × (cast B B ê b = b')`, and the cast at a type variable `B` is stuck
+-- (no regularity at non-inert types, CoreSpec §8.4); `castRefl` removes it. So this lemma
+-- uses the axiom `castRefl` (FINDINGS.md, G6).
+def pairEq.{u, v} {A : Type u} {B : Type v} {a a' : A} {b b' : B} (0 e₁ : a = a') (0 e₂ : b = b') :
+    ((a, b) : A × B) = (a', b') :=
+  ⟨e₁, eqTrans.{v} (castRefl.{v} (A := B) (refl B) b) e₂⟩
