@@ -15,7 +15,7 @@ structure LawfulFunctor (f : Type → Type) [i : Functor f] where
     Functor.map (fun a => h (g a)) x = Functor.map h (Functor.map g x)
 
 def LawfulFunctor.toFun (f : Type → Type) [i : Functor f] (L : LawfulFunctor f) : Types.{0} ⥤ Types.{0} :=
-  Fun.mk f (fun g => Functor.map g) (fun X => fun (0 x : f X) => L.map_id X x) (fun g h => fun (0 x : f _) => L.map_comp _ _ _ g h x)
+  Fun.mk f (fun g => Functor.map g) (fun X => fun (0 x) => L.map_id X x) (fun g h => fun (0 x) => L.map_comp _ _ _ g h x)
 
 -- ### Option
 

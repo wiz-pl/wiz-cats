@@ -26,4 +26,4 @@ def eqJ.{u} {A : Type u} {a : A} (0 P : (0 b : A) → (0 _ : a = b) → Prop) (0
 -- `castRefl`; J (inside `eqCongr2`) needs no axiom (FINDINGS.md, G6).
 def pairEq.{u, v} {A : Type u} {B : Type v} {a a' : A} {b b' : B} (0 e₁ : a = a') (0 e₂ : b = b') :
     ((a, b) : A × B) = (a', b') :=
-  eqCongr2.{u, v, max u v} (fun x y => ((x, y) : A × B)) e₁ e₂
+  eqCongr2.{u, v, max u v} (fun x y => (x, y)) e₁ e₂

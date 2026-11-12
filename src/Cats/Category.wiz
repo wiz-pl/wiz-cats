@@ -76,7 +76,7 @@ def Fun.ext.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Categor
     (c₂ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₂ (C.comp f g) = D.comp (m₂ f) (m₂ g))
     (hmap : {X Y : C.Obj} → (0 f : C.Hom X Y) → m₁ f = m₂ f) :
     (Fun.mk o m₁ i₁ c₁ : C ⥤ D) = Fun.mk o m₂ i₂ c₂ :=
-  eqJ (A := Fun.MapT C D o) (fun (0 m : Fun.MapT C D o) (0 h : m₁ = m) => (Fun.mk o m₁ i₁ c₁ : C ⥤ D) = Fun.mkOf o m₁ i₁ c₁ m h) (refl (Fun.mk o m₁ i₁ c₁ : C ⥤ D))
+  eqJ (A := Fun.MapT C D o) (fun (0 m) (0 h) => (Fun.mk o m₁ i₁ c₁) = Fun.mkOf o m₁ i₁ c₁ m h) (refl (Fun.mk o m₁ i₁ c₁))
     (Fun.mapEq o m₁ m₂ hmap)
 
 -- ## Natural transformations
