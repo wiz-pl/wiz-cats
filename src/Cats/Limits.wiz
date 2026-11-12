@@ -87,14 +87,14 @@ def sigmaProp.{u} {A : Type u} {0 P : A → Prop} : (p : (a : A) × P a) → P p
 -- hole for `obj`, FINDINGS.md, P9)
 def Types.equaliser.{u} {A B : Type u} (f g : A → B) : Equaliser Types.{u} f g :=
   let E : Type u := (a : A) × (f a = g a);
-  Equaliser.mk (C := Types) (f := f) (g := g) E (fun (p : E) => p.1) (sigmaProp (P := fun a => f a = g a))
+  Equaliser.mk (C := Types) (f := f) (g := g) E (fun p => p.1) (sigmaProp (P := fun a => f a = g a))
     (fun h e z => ⟨h z, e z⟩) (fun h e => rfl) (fun k => rfl)
 
 def Types.pullback.{u} {A B C : Type u} (f : A → C) (g : B → C) : Pullback Types.{u} f g :=
   -- (`AB`: the level unifier can't solve `?u+1 = max (u+1) (u+1)`, FINDINGS.md, B4)
   let AB : Type u := A × B;
   let P : Type u := (p : AB) × (f p.1 = g p.2);
-  Pullback.mk (C := Types) (f := f) (g := g) P (fun (p : P) => p.1.1) (fun (p : P) => p.1.2) (sigmaProp (A := AB) (P := fun p => f p.1 = g p.2))
+  Pullback.mk (C := Types) (f := f) (g := g) P (fun p => p.1.1) (fun p => p.1.2) (sigmaProp (A := AB) (P := fun p => f p.1 = g p.2))
     (fun h k e w => ⟨(h w, k w), e w⟩) (fun h k e => rfl) (fun h k e => rfl) (fun m => rfl)
 
 -- ## Products are unique up to isomorphism

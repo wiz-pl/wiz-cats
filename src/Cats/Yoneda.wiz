@@ -7,8 +7,8 @@ import Cats.Constructions
 -- `C(-, X)`; a morphism `f : Y' ⟶ Y` of `C` acts by precomposition
 def Category.yo.{u, v} (C : Category.{u, v}) (X : C.Obj) : Category.op C ⥤ Types.{v} :=
   Fun.mk (fun Y => C.Hom Y X) (fun f g => C.comp f g)
-    (fun Y => fun (0 g : C.Hom Y X) => C.id_comp g)
-    (fun f g => fun (0 h : _) => C.assoc g f h)
+    (fun Y => fun (0 g) => C.id_comp g)
+    (fun f g => fun (0 h) => C.assoc g f h)
 
 -- ## The Yoneda lemma
 
