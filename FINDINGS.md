@@ -331,4 +331,8 @@ in the library would make `Types.{u} ⥤ Types.{v}` available for every instance
 * `NatTrans.ext` is (almost) the identity: funext and proof irrelevance are definitional.
 * Associativity of functor composition, `(F ⋙ G) ⋙ H = F ⋙ (G ⋙ H)`, is `rfl`
   (structure η in conversion).
-* Checking is fast: `src/Cats/Category.wiz` checks in under a second.
+* Checking is fast. `wiz check --no-cache` (rough single runs, each including its
+  imports): Eq 1.4 s, Category 1.6 s, Constructions 1.9 s, Limits 2.4 s, Adjunction
+  4.3 s, Yoneda 2.5 s, Examples 2.6 s, all under 105 MB. The one blow-up is B3.
+* `#print axioms`: everything is axiom-free except `UnitCounit.round` (`castRefl`).
+* `rw` works on goals about morphisms of a bundled category (`rw (C.comp_id f)`).
