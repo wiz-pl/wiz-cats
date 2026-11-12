@@ -6,7 +6,7 @@ import Cats.Constructions
 
 -- `C(-, X)`; a morphism `f : Y' ⟶ Y` of `C` acts by precomposition
 def Category.yo.{u, v} (C : Category.{u, v}) (X : C.Obj) : Category.op C ⥤ Types.{v} :=
-  Fun.mk (fun Y => C.Hom Y X) (fun f g => C.comp f g)
+  Fun.mk (fun Y => C.Hom Y X) (fun f g => f ≫ g)
     (fun Y => fun (0 g) => C.id_comp g)
     (fun f g => fun (0 h) => C.assoc g f h)
 
@@ -34,13 +34,13 @@ def Yoneda.of_to.{u, v} {C : Category.{u, v}} {X : C.Obj} {P : Category.op C ⥤
 
 def Category.yonedaMap.{u, v} {ω C : Category.{u, v}} {X X' : C.Obj} (h : C.Hom X X') :
     NatTrans (C := Category.op C) (Category.yo C X) (Category.yo C X') :=
-  NatTrans.mk (fun Y g => C.comp g h) (fun f => fun g => C.assoc f g h)
+  NatTrans.mk (fun Y g => g ≫ h) (fun f => fun g => C.assoc f g h)
 
 def Category.yonedaMap_id.{u, v} {ω C : Category.{u, v}} (0 X : C.Obj) :
     Category.yonedaMap (C := C) (C.id X) = NatTrans.id (Category.yo C X) :=
   ⟨fun Y => fun g => C.comp_id g, (), fun _ => ()⟩
 def Category.yonedaMap_comp.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) :
-    Category.yonedaMap (C := C) (C.comp f g) = NatTrans.vcomp (Category.yonedaMap f) (Category.yonedaMap g) :=
+    Category.yonedaMap (C := C) (f ≫ g) = NatTrans.vcomp (Category.yonedaMap f) (Category.yonedaMap g) :=
   ⟨fun W => fun k => eqSymm (C.assoc k f g), (), fun _ => ()⟩
 
 -- (the laws as separate lemmas: inside `Fun.mk` their expected types still have holes

@@ -17,7 +17,7 @@ structure Category.{u, v} where
     comp (comp f g) h = comp f (comp g h)
 
 -- `f ≫ g`, with the category found from the type of `f`. Unusable today: the category
--- is not found (FINDINGS.md, B5), so the library writes `C.comp f g`.
+-- is not found (FINDINGS.md, B5), so the library writes `(f ≫ g)`.
 def Category.cmp.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (f : C.Hom X Y) (g : C.Hom Y Z) : C.Hom X Z :=
   C.comp f g
 infixr:80 " ≫ " => Category.cmp
@@ -60,20 +60,20 @@ def Fun.MapT.{u₁, v₁, u₂, v₂} (C : Category.{u₁, v₁}) (D : Category.
 def Fun.mkOf.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} (o : C.Obj → D.Obj)
     (m₁ : Fun.MapT C D o)
     (i₁ : (0 X : C.Obj) → m₁ (C.id X) = D.id (o X))
-    (c₁ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₁ (C.comp f g) = D.comp (m₁ f) (m₁ g))
+    (c₁ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₁ (f ≫ g) = m₁ f ≫ m₁ g)
     (m : Fun.MapT C D o) (0 h : m₁ = m) : C ⥤ D :=
   Fun.mk o m
       (fun X => eqTrans (eqSymm (h _ _ (C.id X))) (i₁ X))
-      (fun f g => eqTrans (eqSymm (h _ _ (C.comp f g)))
-        (eqTrans (c₁ f g) (eqCongr2 (fun a b => D.comp a b) (h _ _ f) (h _ _ g))))
+      (fun f g => eqTrans (eqSymm (h _ _ (f ≫ g)))
+        (eqTrans (c₁ f g) (eqCongr2 (fun a b => a ≫ b) (h _ _ f) (h _ _ g))))
 def Fun.mapEq.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} (o : C.Obj → D.Obj)
     (m₁ m₂ : Fun.MapT C D o) (hmap : {X Y : C.Obj} → (0 f : C.Hom X Y) → m₁ f = m₂ f) : m₁ = m₂ :=
   fun X Y f => @hmap X Y f
 def Fun.ext.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} (o : C.Obj → D.Obj)
     (m₁ m₂ : Fun.MapT C D o)
     (i₁ : (0 X : C.Obj) → m₁ (C.id X) = D.id (o X)) (i₂ : (0 X : C.Obj) → m₂ (C.id X) = D.id (o X))
-    (c₁ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₁ (C.comp f g) = D.comp (m₁ f) (m₁ g))
-    (c₂ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₂ (C.comp f g) = D.comp (m₂ f) (m₂ g))
+    (c₁ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₁ (f ≫ g) = m₁ f ≫ m₁ g)
+    (c₂ : {X Y Z : C.Obj} → (0 f : C.Hom X Y) → (0 g : C.Hom Y Z) → m₂ (f ≫ g) = m₂ f ≫ m₂ g)
     (hmap : {X Y : C.Obj} → (0 f : C.Hom X Y) → m₁ f = m₂ f) :
     (Fun.mk o m₁ i₁ c₁ : C ⥤ D) = Fun.mk o m₂ i₂ c₂ :=
   eqJ (A := Fun.MapT C D o) (fun (0 m) (0 h) => (Fun.mk o m₁ i₁ c₁) = Fun.mkOf o m₁ i₁ c₁ m h) (refl (Fun.mk o m₁ i₁ c₁))
@@ -98,11 +98,11 @@ def NatTrans.id.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Cat
 -- vertical composite
 def NatTrans.vcomp.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {F G H : C ⥤ D}
     (α : NatTrans F G) (β : NatTrans G H) : NatTrans F H :=
-  NatTrans.mk (fun X => D.comp (α.app X) (β.app X))
+  NatTrans.mk (fun X => α.app X ≫ β.app X)
     (fun f => eqTrans (eqSymm (D.assoc (F.map f) (α.app _) (β.app _)))
-      (eqTrans (eqCongr (fun k => D.comp k (β.app _)) (α.naturality f))
+      (eqTrans (eqCongr (fun k => k ≫ β.app _) (α.naturality f))
       (eqTrans (D.assoc (α.app _) (G.map f) (β.app _))
-      (eqTrans (eqCongr (fun k => D.comp (α.app _) k) (β.naturality f))
+      (eqTrans (eqCongr (fun k => α.app _ ≫ k) (β.naturality f))
         (eqSymm (D.assoc (α.app _) (β.app _) (H.map f)))))))
 
 -- ## The category of types

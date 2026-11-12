@@ -31,17 +31,17 @@ structure UnitCounit.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : C
 
 def Adjunction.from_left.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (A : Adjunction F G) {X X' : C.Obj} {Y : D.Obj} (0 h : C.Hom X' X) (0 g : C.Hom X (G.obj Y)) :
-    A.from (C.comp h g) = D.comp (F.map h) (A.from g) :=
-  eqTrans (eqCongr (fun m => A.from (C.comp h m)) (eqSymm (A.to_from g)))
+    A.from (h ≫ g) = F.map h ≫ A.from g :=
+  eqTrans (eqCongr (fun m => A.from (h ≫ m)) (eqSymm (A.to_from g)))
     (eqTrans (eqCongr (fun m => A.from m) (eqSymm (A.to_left h (A.from g))))
-      (A.from_to (D.comp (F.map h) (A.from g))))
+      (A.from_to (F.map h ≫ A.from g)))
 
 def Adjunction.from_right.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (A : Adjunction F G) {X : C.Obj} {Y Y' : D.Obj} (0 g : C.Hom X (G.obj Y)) (0 k : D.Hom Y Y') :
-    A.from (C.comp g (G.map k)) = D.comp (A.from g) k :=
-  eqTrans (eqCongr (fun m => A.from (C.comp m (G.map k))) (eqSymm (A.to_from g)))
+    A.from (g ≫ G.map k) = A.from g ≫ k :=
+  eqTrans (eqCongr (fun m => A.from (m ≫ G.map k)) (eqSymm (A.to_from g)))
     (eqTrans (eqCongr (fun m => A.from m) (eqSymm (A.to_right (A.from g) k)))
-      (A.from_to (D.comp (A.from g) k)))
+      (A.from_to (A.from g ≫ k)))
 
 -- ## From hom-sets to unit and counit
 --
@@ -50,7 +50,7 @@ def Adjunction.from_right.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}
 
 def Adjunction.unit_nat.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (A : Adjunction F G) {X X' : C.Obj} (0 h : C.Hom X X') :
-    C.comp h (A.to (D.id (F.obj X'))) = C.comp (A.to (D.id (F.obj X))) (G.map (F.map h)) :=
+    h ≫ A.to (D.id (F.obj X')) = (A.to (D.id (F.obj X)) ≫ G.map (F.map h)) :=
   eqTrans (eqSymm (A.to_left h (D.id (F.obj X'))))
     (eqTrans (eqCongr (fun m => A.to m) (D.comp_id (F.map h)))
       (eqTrans (eqCongr (fun m => A.to m) (eqSymm (D.id_comp (F.map h))))
@@ -58,7 +58,7 @@ def Adjunction.unit_nat.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} 
 
 def Adjunction.counit_nat.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (A : Adjunction F G) {Y Y' : D.Obj} (0 k : D.Hom Y Y') :
-    D.comp (F.map (G.map k)) (A.from (C.id (G.obj Y'))) = D.comp (A.from (C.id (G.obj Y))) k :=
+    F.map (G.map k) ≫ A.from (C.id (G.obj Y')) = (A.from (C.id (G.obj Y)) ≫ k) :=
   eqTrans (eqSymm (Adjunction.from_left A (G.map k) (C.id (G.obj Y'))))
     (eqTrans (eqCongr (fun m => A.from m) (C.comp_id (G.map k)))
       (eqTrans (eqCongr (fun m => A.from m) (eqSymm (C.id_comp (G.map k))))
@@ -74,14 +74,14 @@ def Adjunction.counit.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {�
 
 def Adjunction.left_triangle.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (A : Adjunction F G) (0 X : C.Obj) :
-    D.comp (F.map (A.to (D.id (F.obj X)))) (A.from (C.id (G.obj (F.obj X)))) = D.id (F.obj X) :=
+    F.map (A.to (D.id (F.obj X))) ≫ A.from (C.id (G.obj (F.obj X))) = D.id (F.obj X) :=
   eqTrans (eqSymm (Adjunction.from_left A (A.to (D.id (F.obj X))) (C.id (G.obj (F.obj X)))))
     (eqTrans (eqCongr (fun m => A.from m) (C.comp_id (A.to (D.id (F.obj X)))))
       (A.from_to (D.id (F.obj X))))
 
 def Adjunction.right_triangle.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (A : Adjunction F G) (0 Y : D.Obj) :
-    C.comp (A.to (D.id (F.obj (G.obj Y)))) (G.map (A.from (C.id (G.obj Y)))) = C.id (G.obj Y) :=
+    A.to (D.id (F.obj (G.obj Y))) ≫ G.map (A.from (C.id (G.obj Y))) = C.id (G.obj Y) :=
   eqTrans (eqSymm (A.to_right (D.id (F.obj (G.obj Y))) (A.from (C.id (G.obj Y)))))
     (eqTrans (eqCongr (fun m => A.to m) (D.id_comp (A.from (C.id (G.obj Y)))))
       (A.to_from (C.id (G.obj Y))))
@@ -99,45 +99,45 @@ def Adjunction.toUnitCounit.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v�
 -- inferred: C ⥤ D", FINDINGS.md, B6)
 def UnitCounit.from_to.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) {X : C.Obj} {Y : D.Obj} (0 f : D.Hom (F.obj X) Y) :
-    D.comp (F.map (C.comp (U.unit.app X) (G.map f))) (U.counit.app Y) = f :=
+    F.map (U.unit.app X ≫ G.map f) ≫ U.counit.app Y = f :=
   let 0 η := U.unit.app X;
   let 0 ε := U.counit.app Y;
-  eqTrans (eqCongr (fun m => D.comp m ε) (F.map_comp η (G.map f)))
+  eqTrans (eqCongr (fun m => m ≫ ε) (F.map_comp η (G.map f)))
     (eqTrans (D.assoc (F.map η) (F.map (G.map f)) ε)
-    (eqTrans (eqCongr (fun m => D.comp (F.map η) m) (U.counit.naturality f))
+    (eqTrans (eqCongr (fun m => F.map η ≫ m) (U.counit.naturality f))
     (eqTrans (eqSymm (D.assoc (F.map η) (U.counit.app (F.obj X)) f))
-    (eqTrans (eqCongr (fun m => D.comp m f) (U.left_triangle X))
+    (eqTrans (eqCongr (fun m => m ≫ f) (U.left_triangle X))
     (D.id_comp f)))))
 
 def UnitCounit.to_from.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) {X : C.Obj} {Y : D.Obj} (0 g : C.Hom X (G.obj Y)) :
-    C.comp (U.unit.app X) (G.map (D.comp (F.map g) (U.counit.app Y))) = g :=
+    U.unit.app X ≫ G.map (F.map g ≫ U.counit.app Y) = g :=
   let 0 η := U.unit.app X;
   let 0 ε := U.counit.app Y;
-  eqTrans (eqCongr (fun m => C.comp η m) (G.map_comp (F.map g) ε))
+  eqTrans (eqCongr (fun m => η ≫ m) (G.map_comp (F.map g) ε))
     (eqTrans (eqSymm (C.assoc η (G.map (F.map g)) (G.map ε)))
-    (eqTrans (eqCongr (fun m => C.comp m (G.map ε)) (eqSymm (U.unit.naturality g)))
+    (eqTrans (eqCongr (fun m => m ≫ G.map ε) (eqSymm (U.unit.naturality g)))
     (eqTrans (C.assoc g (U.unit.app (G.obj Y)) (G.map ε))
-    (eqTrans (eqCongr (fun m => C.comp g m) (U.right_triangle Y))
+    (eqTrans (eqCongr (fun m => g ≫ m) (U.right_triangle Y))
     (C.comp_id g)))))
 
 def UnitCounit.to_left.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) {X X' : C.Obj} {Y : D.Obj} (0 h : C.Hom X' X) (0 f : D.Hom (F.obj X) Y) :
-    C.comp (U.unit.app X') (G.map (D.comp (F.map h) f)) = C.comp h (C.comp (U.unit.app X) (G.map f)) :=
-  eqTrans (eqCongr (fun m => C.comp (U.unit.app X') m) (G.map_comp (F.map h) f))
+    U.unit.app X' ≫ G.map (F.map h ≫ f) = (h ≫ (U.unit.app X ≫ G.map f)) :=
+  eqTrans (eqCongr (fun m => U.unit.app X' ≫ m) (G.map_comp (F.map h) f))
     (eqTrans (eqSymm (C.assoc (U.unit.app X') (G.map (F.map h)) (G.map f)))
-    (eqTrans (eqCongr (fun m => C.comp m (G.map f)) (eqSymm (U.unit.naturality h)))
+    (eqTrans (eqCongr (fun m => m ≫ G.map f) (eqSymm (U.unit.naturality h)))
     (C.assoc h (U.unit.app X) (G.map f))))
 
 def UnitCounit.to_right.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) {X : C.Obj} {Y Y' : D.Obj} (0 f : D.Hom (F.obj X) Y) (0 k : D.Hom Y Y') :
-    C.comp (U.unit.app X) (G.map (D.comp f k)) = C.comp (C.comp (U.unit.app X) (G.map f)) (G.map k) :=
-  eqTrans (eqCongr (fun m => C.comp (U.unit.app X) m) (G.map_comp f k))
+    U.unit.app X ≫ G.map (f ≫ k) = ((U.unit.app X ≫ G.map f) ≫ G.map k) :=
+  eqTrans (eqCongr (fun m => U.unit.app X ≫ m) (G.map_comp f k))
     (eqSymm (C.assoc (U.unit.app X) (G.map f) (G.map k)))
 
 def UnitCounit.toAdjunction.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) : Adjunction F G :=
-  Adjunction.mk (fun f => C.comp (U.unit.app _) (G.map f)) (fun g => D.comp (F.map g) (U.counit.app _))
+  Adjunction.mk (fun f => U.unit.app _ ≫ G.map f) (fun g => F.map g ≫ U.counit.app _)
     (fun f => UnitCounit.from_to U f) (fun g => UnitCounit.to_from U g)
     (fun h f => UnitCounit.to_left U h f) (fun f k => UnitCounit.to_right U f k)
 
@@ -163,13 +163,13 @@ def Adjunction.round_from.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}
 def UnitCounit.round_unit.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) (0 X : C.Obj) :
     (Adjunction.toUnitCounit (UnitCounit.toAdjunction U)).unit.app X = U.unit.app X :=
-  eqTrans (eqCongr (fun m => C.comp (U.unit.app X) m) (G.map_id (F.obj X)))
+  eqTrans (eqCongr (fun m => U.unit.app X ≫ m) (G.map_id (F.obj X)))
     (C.comp_id (U.unit.app X))
 
 def UnitCounit.round_counit.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) (0 Y : D.Obj) :
     (Adjunction.toUnitCounit (UnitCounit.toAdjunction U)).counit.app Y = U.counit.app Y :=
-  eqTrans (eqCongr (fun m => D.comp m (U.counit.app Y)) (F.map_id (G.obj Y)))
+  eqTrans (eqCongr (fun m => m ≫ U.counit.app Y) (F.map_id (G.obj Y)))
     (D.id_comp (U.counit.app Y))
 
 -- (the implicit arguments of `eqTrans` are given: its holes `?a = ?b` don't unify with
