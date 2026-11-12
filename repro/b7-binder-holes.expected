@@ -1,0 +1,2 @@
+repro/b7-binder-holes.wiz:9:3: error: function expected
+  α.2.1 (?m7 C X P α Y f) (?m8 C X P α Y f) f : (?m1 C X P).2.2.2.1 ((Category.yo C X).1 (?m7 C X P α Y f)) ((Category.yo C X).1 (?m8 C X P α Y f)) (P.1 (?m8 C X P α Y f)) ((Category.yo C X).2.1 (?m7 C X P α Y f) (?m8 C X P α Y f) f) (α.1 (?m8 C X P α Y f)) = (?m1 C X P).2.2.2.1 ((Category.yo C X).1 (?m7 C X P α Y f)) (P.1 (?m7 C X P α Y f)) (P.1 (?m8 C X P α Y f)) (α.1 (?m7 C X P α Y f)) (P.2.1 (?m7 C X P α Y f) (?m8 C X P α Y f) f)

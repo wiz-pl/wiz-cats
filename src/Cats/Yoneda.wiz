@@ -1,0 +1,58 @@
+import Cats.Constructions
+-- The Yoneda lemma: for a presheaf P : Cᵒᵖ ⥤ Types, natural transformations
+-- C(-, X) ⟶ P correspond to elements of P X; and the Yoneda embedding is fully faithful.
+
+-- ## Representable presheaves
+
+-- `C(-, X)`; a morphism `f : Y' ⟶ Y` of `C` acts by precomposition
+def Category.yo.{u, v} (C : Category.{u, v}) (X : C.Obj) : Category.op C ⥤ Types.{v} :=
+  Fun.mk (fun Y => C.Hom Y X) (fun f g => C.comp f g)
+    (fun Y => fun (0 g : C.Hom Y X) => C.id_comp g)
+    (fun f g => fun (0 h : _) => C.assoc g f h)
+
+-- ## The Yoneda lemma
+
+def Yoneda.toElem.{u, v} {ω C : Category.{u, v}} {ω X : C.Obj} {P : Category.op C ⥤ Types.{v}}
+    (α : NatTrans (C := Category.op C) (D := Types.{v}) (Category.yo C X) P) : P.obj X :=
+  α.app X (C.id X)
+
+def Yoneda.ofElem.{u, v} {ω C : Category.{u, v}} {ω X : C.Obj} {ω P : Category.op C ⥤ Types.{v}}
+    (x : P.obj X) : NatTrans (Category.yo C X) P :=
+  NatTrans.mk (fun Y f => P.map f x) (fun g => fun f => P.map_comp f g x)
+
+def Yoneda.to_of.{u, v} {ω C : Category.{u, v}} {ω X : C.Obj} {ω P : Category.op C ⥤ Types.{v}}
+    (0 x : P.obj X) : Yoneda.toElem (Yoneda.ofElem (P := P) x) = x :=
+  P.map_id X x
+
+def Yoneda.of_to.{u, v} {C : Category.{u, v}} {X : C.Obj} {P : Category.op C ⥤ Types.{v}}
+    (0 α : NatTrans (C := Category.op C) (D := Types.{v}) (Category.yo C X) P) : Yoneda.ofElem (X := X) (P := P) (Yoneda.toElem α) = α :=
+  NatTrans.ext (Yoneda.ofElem (X := X) (P := P) (Yoneda.toElem α)) α
+    (fun Y => fun f => eqTrans.{v} (eqSymm.{v} (α.naturality f (C.id X)))
+      (eqCongr.{v, v} (fun g => α.app Y g) (C.comp_id f)))
+
+-- ## The Yoneda embedding
+
+def Category.yonedaMap.{u, v} {ω C : Category.{u, v}} {X X' : C.Obj} (h : C.Hom X X') :
+    NatTrans (C := Category.op C) (D := Types.{v}) (Category.yo C X) (Category.yo C X') :=
+  NatTrans.mk (fun Y g => C.comp g h) (fun f => fun g => C.assoc f g h)
+
+def Category.yonedaMap_id.{u, v} {ω C : Category.{u, v}} (0 X : C.Obj) :
+    Category.yonedaMap (C := C) (C.id X) = NatTrans.id (Category.yo C X) :=
+  ⟨fun Y => fun g => C.comp_id g, (), fun _ => ()⟩
+def Category.yonedaMap_comp.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) :
+    Category.yonedaMap (C := C) (C.comp f g) = NatTrans.vcomp (Category.yonedaMap (C := C) f) (Category.yonedaMap (C := C) g) :=
+  ⟨fun W => fun k => eqSymm.{v} (C.assoc k f g), (), fun _ => ()⟩
+
+-- (the laws as separate lemmas: inside `Fun.mk` their expected types still have holes
+-- for `map`, FINDINGS.md, P9)
+def Category.yoneda.{u, v} (C : Category.{u, v}) : C ⥤ Category.functors (Category.op C) Types.{v} :=
+  Fun.mk (fun X => Category.yo C X) (fun h => Category.yonedaMap (C := C) h)
+    (fun X => Category.yonedaMap_id X) (fun f g => Category.yonedaMap_comp (C := C) f g)
+
+-- the preimage of `α : C(-, X) ⟶ C(-, X')` is `α X (id X)`; that `yoneda.map` of it is `α`
+-- is the Yoneda lemma for `P = C(-, X')`, as `yonedaMap x` and `ofElem x` are the same
+-- natural transformation (definitionally)
+def Category.yoneda_fullyFaithful.{u, v} (C : Category.{u, v}) : FullyFaithful (Category.yoneda C) :=
+  FullyFaithful.mk (fun α => Yoneda.toElem α)
+    (fun α => Yoneda.of_to α)
+    (fun h => C.id_comp h)

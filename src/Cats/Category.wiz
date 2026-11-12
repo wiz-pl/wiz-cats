@@ -88,7 +88,7 @@ structure NatTrans.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Cat
 -- the structures computes to that (the naturality proofs are irrelevant), so this is
 -- the identity function.
 def NatTrans.ext.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} {F G : C ⥤ D}
-    (α β : NatTrans F G) (h : (X : C.Obj) → α.app X = β.app X) : α = β := (h, (), fun _ => ())
+    (0 α β : NatTrans F G) (0 h : (X : C.Obj) → α.app X = β.app X) : α = β := (h, (), fun _ => ())
 
 def NatTrans.id.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} (F : C ⥤ D) : NatTrans F F :=
   NatTrans.mk (fun X => D.id (F.obj X))
@@ -109,3 +109,12 @@ def NatTrans.vcomp.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : 
 def Types.{u} : Category.{u+1, u} :=
   Category.mk (Type u) (fun A B => A → B) (fun A a => a) (fun f g a => g (f a))
     (fun f => rfl) (fun f => rfl) (fun f g h => rfl)
+
+-- ## Fully faithful functors
+
+-- `F.map` is a bijection on each hom-type
+structure FullyFaithful.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} (F : C ⥤ D) :
+    Type (max (max u₁ v₁) v₂) where
+  preimage : {ω X : C.Obj} → {Y : C.Obj} → D.Hom (F.obj X) (F.obj Y) → C.Hom X Y
+  map_preimage : {X Y : C.Obj} → (0 g : D.Hom (F.obj X) (F.obj Y)) → F.map (preimage g) = g
+  preimage_map : {X Y : C.Obj} → (0 f : C.Hom X Y) → preimage (F.map f) = f

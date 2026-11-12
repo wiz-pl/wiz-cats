@@ -1,0 +1,13 @@
+-- test: check
+import Cats.Yoneda
+-- FINDINGS.md, B7: in `bad`, the type of `α` keeps a hole for the category `D` of
+-- `NatTrans` (it prints as `?m1 C X P`), so `α.naturality f g` doesn't compute to a
+-- function and is "function expected". With `D` written, it is accepted.
+def bad.{u, v} {ω C : Category.{u, v}} {X : C.Obj} {P : Category.op C ⥤ Types.{v}}
+    (α : NatTrans (Category.yo C X) P) {Y : C.Obj} (f : C.Hom Y X) :
+    α.app Y (C.comp f (C.id X)) = P.map f (α.app X (C.id X)) :=
+  α.naturality f (C.id X)
+def ok.{u, v} {ω C : Category.{u, v}} {X : C.Obj} {P : Category.op C ⥤ Types.{v}}
+    (α : NatTrans (D := Types.{v}) (Category.yo C X) P) {Y : C.Obj} (f : C.Hom Y X) :
+    α.app Y (C.comp f (C.id X)) = P.map f (α.app X (C.id X)) :=
+  α.naturality f (C.id X)

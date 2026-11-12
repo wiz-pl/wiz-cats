@@ -127,6 +127,23 @@ P5, or a hole). `U.unit.app X : C.Hom ((Fun.id C).obj X) ((F ⋙ G).obj X)`, so 
 objects are only convertible with `X` and `G.obj (F.obj X)`. Here: every proof about
 adjunctions is a term, a chain of `eqTrans` and `eqCongr` (`src/Cats/Adjunction.wiz`).
 
+### B7. A hole in a binder's type is not solved before the body needs it
+
+```
+def bad {ω C : Category} {X : C.Obj} {P : Category.op C ⥤ Types}
+    (α : NatTrans (Category.yo C X) P) {Y : C.Obj} (f : C.Hom Y X) :
+    α.app Y (C.comp f (C.id X)) = P.map f (α.app X (C.id X)) :=
+  α.naturality f (C.id X)
+-- function expected: α.2.1 ?Y ?Y' f : (?m1 C X P).2.2.2.1 … = …
+```
+
+`NatTrans {C D : Category} (F G : C ⥤ D)`: the hole for `D` in the type of `α` should be
+`Types` (from `P : Category.op C ⥤ Types`), but while the body is elaborated the type
+of `α` still has `?m1 C X P` for it, so the naturality equation is about `(?m1 C X
+P).comp …`, which can't compute to a function of `g`. Writing `(D := Types.{v})` in the
+binder fixes it (`repro/b7-binder-holes.wiz`). Here: the Yoneda lemma's binders name
+both categories.
+
 ## Gaps
 
 ### G1. The equality lemmas of lib/Logic.wiz are at `Type` only
@@ -268,6 +285,15 @@ their proof at ω for that reason.
   left open (`repro/b6-rw-functor.wiz`).
 * **P12.** A `let` in a proof binds at ω, so `let η := U.unit.app X; …` in a proof is
   rejected when `X` is erased (G2): write `let 0 η := …`.
+
+* **P13.** Names that shadow are printed the same: in the expected type of a field of
+  `Fun.mk`, the field's own implicit `{X Y Z}` and the definition's `X` are all printed
+  `X`, so `(0 x : C.2.1 X X)` means "from the field's `X` to the definition's `X`".
+  Binders get primes (`n'`), context variables don't.
+* **P14.** A law that is a function of an erased variable can't be written as a plain
+  lambda inside a constructor: `(fun Y => fun g => C.id_comp g)` against the computed
+  `(0 x : C.Hom Y X) → …` is "quantity mismatch", because the lambda was elaborated
+  before the equation computed (P9). `fun (0 g : C.Hom Y X) => …` works.
 
 ## What works well
 
