@@ -1,6 +1,7 @@
 -- test: check
 import Cats.Eq
 -- FINDINGS.md, B1: `bad` is rejected with "could not infer a universe level".
+-- Fixed in wiz #239: everything here checks (the expected output is empty).
 structure Box.{u, v} where
   T : Type u
   R : T → T → Type v

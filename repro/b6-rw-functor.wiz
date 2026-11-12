@@ -1,12 +1,12 @@
 -- test: check
 import Cats.Adjunction
--- FINDINGS.md, B6: `rw` with a functor law at a composite functor's object fails with
--- "rewrite: type mismatch, expected: C ⥤ D, inferred: C ⥤ D".
+-- FINDINGS.md, B6: `rw` with a functor law at a composite functor's object failed with
+-- "rewrite: type mismatch, expected: C ⥤ D, inferred: C ⥤ D". Fixed in wiz #239: the
+-- rewrite goes through, and the goal left (shown as "unsolved goals") is the rewritten one.
 def bad.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) {X : C.Obj} {Y : D.Obj} (0 f : D.Hom (F.obj X) Y) :
     D.comp (F.map (C.comp (U.unit.app X) (G.map f))) (U.counit.app Y) = f := by
   rw (F.map_comp (U.unit.app X) (G.map f))
-  exact UnitCounit.from_to U f
 -- also: `rw` doesn't close a goal `a = a` by `rfl` afterwards (Lean's does)
 def noRfl.{u, v} {ω C : Category.{u, v}} {X Y : C.Obj} (f : C.Hom X Y) :
     C.comp (C.id X) f = f := by
