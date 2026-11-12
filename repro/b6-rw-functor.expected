@@ -1,0 +1,9 @@
+repro/b6-rw-functor.wiz:8:3: error: rewrite: type mismatch
+  expected: C ⥤ D
+  inferred: C ⥤ D
+repro/b6-rw-functor.wiz:12:30: error: unsolved goals:
+C : Category
+X : C.1
+Y : C.1
+f : C.2.1 X Y
+⊢ f = f

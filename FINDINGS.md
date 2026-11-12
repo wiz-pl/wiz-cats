@@ -117,6 +117,16 @@ category can find the category from a morphism equation: every such use needs
 `(C := C)`. The holes for the objects and morphisms are then found.
 Here: `(C := C)` (`Product.unique`).
 
+### B6. `rw` with a functor law: "expected: C ⥤ D, inferred: C ⥤ D"
+
+In a goal about the unit of an adjunction, `rw (F.map_comp (U.unit.app X) (G.map f))`
+fails with "rewrite: type mismatch / expected: C ⥤ D / inferred: C ⥤ D"
+(`repro/b6-rw-functor.wiz`). The same `rw` with a functor law at plain objects works.
+The two printed types are the same; the difference is invisible (levels are not printed,
+P5, or a hole). `U.unit.app X : C.Hom ((Fun.id C).obj X) ((F ⋙ G).obj X)`, so the
+objects are only convertible with `X` and `G.obj (F.obj X)`. Here: every proof about
+adjunctions is a term, a chain of `eqTrans` and `eqCongr` (`src/Cats/Adjunction.wiz`).
+
 ## Gaps
 
 ### G1. The equality lemmas of lib/Logic.wiz are at `Type` only
@@ -225,7 +235,11 @@ their proof at ω for that reason.
   elaborated against a hole (`⟨m₁, refl m₁⟩` with no expected type), is eta-expanded
   with fresh holes for the implicits that aren't tied to the new binders:
   `fun X Y => m₁ ?m108 ?m109`; `fun X Y f => hmap f` gives `hmap ?a ?b f`. Here:
-  `@hmap X Y f`.
+  `@hmap X Y f`. The same makes `castRefl (A := T) (refl T) m` unusable for a local `m`
+  of such a type `T` (`{X : C.Obj} → {ω Y : D.Obj} → …`, the type of an adjunction's
+  `from`): `m` is applied to fresh holes, its type becomes `D.Hom (F.obj ?X) ?Y`, and
+  the equation `T = …` computes to `False` (different type formers). Here: the
+  equation of two adjunctions (round trip) is stated pointwise only.
 * **P8.** The anonymous constructor `⟨…⟩` does not see that its expected type, an
   equation at a Σ, computes to a Σ ("needs a structure, a pair … not (m₁, …) = (m₂, …)");
   a tuple `(a, b)` is elaborated without the expected type and then fails on the
@@ -249,6 +263,11 @@ their proof at ω for that reason.
   (0 fields✝ : Enum [fields✝]) → Unit…": only real fields are found, and the error
   names the Σ's last component instead of the structure. Here: `Terminal.hom_ext S`,
   `Category.op (Category.op C)`.
+
+* **P11.** `rw` doesn't try `rfl` afterwards: after `rw (C.id_comp f)` the goal `f = f` is
+  left open (`repro/b6-rw-functor.wiz`).
+* **P12.** A `let` in a proof binds at ω, so `let η := U.unit.app X; …` in a proof is
+  rejected when `X` is erased (G2): write `let 0 η := …`.
 
 ## What works well
 
