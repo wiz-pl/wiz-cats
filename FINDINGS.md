@@ -90,6 +90,33 @@ two functors, four fields, already prints as 12 000 characters, G5.) Not in `rep
 reproduce it.
 Here: `refl C`.
 
+### B4. The level unifier doesn't normalise: `?u+1 = max (u+1) (u+1)` fails
+
+`eqCongr (fun y => y) (refl x)` for `x : A × B`, `A B : Type u`, is "universe level
+mismatch: ?u0+1 vs max (u+1) (u+1)" (`repro/b4-level-max.wiz`); the same with
+`Sort (max (imax (u₁+1) (imax (u₁+1) (imax (v₁+1) (v₂+1)))) 0)` for a Σ type of
+functions. Both sides are `l+1` after normalisation (`Level.normalize` exists, the
+kernel uses it). Here: explicit levels, or a `let AB : Type u := A × B` that fixes the
+level of the type.
+
+### B5. A structure-valued hole under a projection is never solved
+
+```
+def lem {ω C : Category} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
+    (0 e : C.comp f g = h) : h = C.comp f g := …
+def bad … (0 e : C.comp f g = h) : h = C.comp f g := lem _ _ _ e
+-- type mismatch: expected (?m6 C X Y Z f g h e).2.2.2.1 (?m7 …) … = ?m12 …, inferred
+-- C.2.2.2.1 X Y Z f g = h (unification problem is outside the pattern fragment)
+```
+
+(`repro/b5-proj-hole.wiz`.) A structure is an anonymous Σ, so `C.comp` is the
+projection `C.2.2.2.1`, and `(?C).2.2.2.1 ?f ?g =?= C.2.2.2.1 f g` is not decomposed into
+`?C =?= C`. (In Lean, `Category.comp ?C ?f ?g` is an application of a constant and the
+first-order approximation solves it.) So no lemma about morphisms of an implicit
+category can find the category from a morphism equation: every such use needs
+`(C := C)`. The holes for the objects and morphisms are then found.
+Here: `(C := C)` (`Product.unique`).
+
 ## Gaps
 
 ### G1. The equality lemmas of lib/Logic.wiz are at `Type` only
@@ -158,6 +185,24 @@ the cast `cast B B ê b` is between syntactically equal types; regularity just f
 non-dependent Σ (the motive of `ê` doesn't use its variable) would remove the axiom
 from every such proof.
 
+### G7. Proof components of an erased subtype element can't be reached
+
+`ι ≫ f = ι ≫ g` in `Types`, with `ι = fun p => p.1` on `E = (a : A) × (f a = g a)`,
+computes to `(0 p : E) → f p.1 = g p.1` (funext binds `p` at 0). The obvious proof
+`fun p => p.2` is rejected ("cannot project p.2 … p, which has quantity 0", B2 again);
+`let 0 (x, e) := p; e` gives `e : P x`, not `P p.1` (the tuple `let` is not dependent);
+an identity `(0 h : P) → P := h` is rejected ("h declared with quantity 0 but used 1").
+What works: a function with an *unerased* binder, `sigmaProp : (p : (a : A) × P a) → P p.1
+:= fun p => p.2`, passed where the erased one is expected, which the kernel accepts by
+subtyping (a Π that is a proposition ignores quantities, CoreSpec §11.5), but only with
+all its implicit arguments given: the elaborator's unifier doesn't do that subtyping
+("quantity mismatch") when holes are left. Here: `sigmaProp (A := A) (P := …)`.
+
+Related: a Σ binder can't carry a quantity in a term (`(a : A) × (0 _ : f a = g a)` is
+"function expected 0 : Nat"), so a subtype's proof component is ω, and building one
+from an erased proof is rejected (G2). The equaliser's and pullback's `lift` take
+their proof at ω for that reason.
+
 ## Papercuts
 
 * **P1.** `max` takes exactly two levels: `Type (max u₁ v₁ u₂ v₂)` is "function expected
@@ -191,10 +236,19 @@ from every such proof.
   pattern fragment" (`h`'s type `?α.1 X = ?β.1 X` is unified before the result type).
   And in a field of `Category.mk` the expected type of a law still has holes for the
   earlier fields (`?m3 C D X X Y (?m2 C D X) α = α`), so the equation has not computed
-  and `⟨…⟩` rejects it. Here: the laws of the functor category are separate lemmas.
-* **P10.** Dot notation through a function that returns a structure: `C.op.op` is "no
-  field 'op' in a value of type (0 fields✝ : Enum [fields✝]) → Unit…": the second `.op`
-  is looked up in the Σ's last component. Here: `Category.op (Category.op C)`.
+  and `⟨…⟩` rejects it. Even the parameters of the structure are still holes while its
+  fields are elaborated: in `Equaliser.mk E (fun p => p.1) …` against
+  `Equaliser Types f g`, the field `cond` is checked against `(?m2 …).comp …`, with the
+  category itself a hole, and `fun p => p.1` against a hole ("cannot project from a
+  value of type ?m13 A B f g"). Lean elaborates against the expected type first
+  (`elab_as_elim` aside, it postpones the arguments). Here: the laws of the functor
+  category are separate lemmas, and the limits in `Types` pass the parameters by name
+  (`Equaliser.mk (C := Types.{u}) (f := f) (g := g) …`) and annotate binder types.
+* **P10.** No generalised field notation: `S.hom_ext` for `S : Terminal C` (meaning
+  `Terminal.hom_ext S`) and `C.op.op` are "no field 'hom_ext' in a value of type
+  (0 fields✝ : Enum [fields✝]) → Unit…": only real fields are found, and the error
+  names the Σ's last component instead of the structure. Here: `Terminal.hom_ext S`,
+  `Category.op (Category.op C)`.
 
 ## What works well
 

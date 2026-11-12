@@ -1,0 +1,4 @@
+repro/b5-proj-hole.wiz:8:58: error: type mismatch
+  expected: (?m6 C X Y Z f g h e).2.2.2.1 (?m7 C X Y Z f g h e) (?m8 C X Y Z f g h e) (?m9 C X Y Z f g h e) (?m10 C X Y Z f g h e) (?m11 C X Y Z f g h e) = ?m12 C X Y Z f g h e
+  inferred: C.2.2.2.1 X Y Z f g = h
+  (unification problem is outside the pattern fragment)

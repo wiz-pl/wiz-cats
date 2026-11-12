@@ -1,0 +1,10 @@
+-- test: check
+import Cats.Category
+-- FINDINGS.md, B5: the category of `lem` is not found from `e : C.comp f g = h`:
+-- `(?C).comp ?f ?g =?= C.comp f g` is "outside the pattern fragment".
+def lem.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
+    (0 e : C.comp f g = h) : h = C.comp f g := eqSymm.{v} e
+def bad.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
+    (0 e : C.comp f g = h) : h = C.comp f g := lem _ _ _ e
+def ok.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
+    (0 e : C.comp f g = h) : h = C.comp f g := lem (C := C) _ _ _ e

@@ -1,0 +1,5 @@
+-- test: check
+import Cats.Eq
+-- FINDINGS.md, B4: `?u+1 = max (u+1) (u+1)` is not solved, so `bad` is rejected.
+def bad.{u} (A B : Type u) (x : A × B) : x = x := eqCongr (fun y => y) (refl x)
+def ok.{u} (A B : Type u) (x : A × B) : x = x := eqCongr.{u, u} (fun y => y) (refl x)
