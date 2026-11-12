@@ -25,7 +25,7 @@ structure Terminal.{u, v} (C : Category.{u, v}) : Type (max u v) where
 
 -- any two morphisms into a terminal object are equal
 def Terminal.hom_ext.{u, v} {C : Category.{u, v}} (T : Terminal C) {X : C.Obj} (0 f g : C.Hom X T.obj) : f = g :=
-  eqTrans.{v} (T.uniq f) (eqSymm.{v} (T.uniq g))
+  eqTrans (T.uniq f) (eqSymm (T.uniq g))
 
 -- two terminal objects are isomorphic
 def Terminal.unique.{u, v} {ω C : Category.{u, v}} (S T : Terminal C) : Iso C S.obj T.obj :=
@@ -87,14 +87,14 @@ def sigmaProp.{u} {A : Type u} {0 P : A → Prop} : (p : (a : A) × P a) → P p
 -- hole for `obj`, FINDINGS.md, P9)
 def Types.equaliser.{u} {A B : Type u} (f g : A → B) : Equaliser Types.{u} f g :=
   let E : Type u := (a : A) × (f a = g a);
-  Equaliser.mk (C := Types.{u}) (f := f) (g := g) E (fun (p : E) => p.1) (sigmaProp (A := A) (P := fun a => f a = g a))
+  Equaliser.mk (C := Types) (f := f) (g := g) E (fun (p : E) => p.1) (sigmaProp (P := fun a => f a = g a))
     (fun h e z => ⟨h z, e z⟩) (fun h e => rfl) (fun k => rfl)
 
 def Types.pullback.{u} {A B C : Type u} (f : A → C) (g : B → C) : Pullback Types.{u} f g :=
   -- (`AB`: the level unifier can't solve `?u+1 = max (u+1) (u+1)`, FINDINGS.md, B4)
   let AB : Type u := A × B;
   let P : Type u := (p : AB) × (f p.1 = g p.2);
-  Pullback.mk (C := Types.{u}) (f := f) (g := g) P (fun (p : P) => p.1.1) (fun (p : P) => p.1.2) (sigmaProp (A := AB) (P := fun p => f p.1 = g p.2))
+  Pullback.mk (C := Types) (f := f) (g := g) P (fun (p : P) => p.1.1) (fun (p : P) => p.1.2) (sigmaProp (A := AB) (P := fun p => f p.1 = g p.2))
     (fun h k e w => ⟨(h w, k w), e w⟩) (fun h k e => rfl) (fun h k e => rfl) (fun m => rfl)
 
 -- ## Products are unique up to isomorphism
@@ -102,22 +102,22 @@ def Types.pullback.{u} {A B C : Type u} (f : A → C) (g : B → C) : Pullback T
 -- two morphisms into a product are equal when their components are
 def Product.hom_ext.{u, v} {C : Category.{u, v}} {X Y : C.Obj} (P : Product C X Y) {Z : C.Obj}
     (0 h k : C.Hom Z P.obj) (0 e₁ : C.comp h P.fst = C.comp k P.fst) (0 e₂ : C.comp h P.snd = C.comp k P.snd) : h = k :=
-  eqTrans.{v} (P.uniq h)
-    (eqTrans.{v} (eqCongr2.{v, v, v} (fun a b => P.pair a b) e₁ e₂) (eqSymm.{v} (P.uniq k)))
+  eqTrans (P.uniq h)
+    (eqTrans (eqCongr2 (fun a b => P.pair a b) e₁ e₂) (eqSymm (P.uniq k)))
 
 -- `i ≫ j ≫ P.fst = P.fst` when `j ≫ P.fst = Q.fst` and `i ≫ Q.fst = P.fst`
 def Category.comp_comp_eq.{u, v} {ω C : Category.{u, v}} {W X Y Z : C.Obj}
     (0 i : C.Hom W X) (0 j : C.Hom X Y) (0 p : C.Hom Y Z) (0 q : C.Hom X Z) (0 r : C.Hom W Z)
     (0 e₁ : C.comp j p = q) (0 e₂ : C.comp i q = r) : C.comp (C.comp i j) p = C.comp (C.id W) r :=
-  eqTrans.{v} (C.assoc i j p)
-    (eqTrans.{v} (eqCongr.{v, v} (fun m => C.comp i m) e₁)
-      (eqTrans.{v} e₂ (eqSymm.{v} (C.id_comp r))))
+  eqTrans (C.assoc i j p)
+    (eqTrans (eqCongr (fun m => C.comp i m) e₁)
+      (eqTrans e₂ (eqSymm (C.id_comp r))))
 
 def Product.unique.{u, v} {ω C : Category.{u, v}} {X Y : C.Obj} (P Q : Product C X Y) : Iso C P.obj Q.obj :=
   Iso.mk (Q.pair P.fst P.snd) (P.pair Q.fst Q.snd)
     (Product.hom_ext P _ _
-      (Category.comp_comp_eq (C := C) _ _ _ _ _ (P.pair_fst Q.fst Q.snd) (Q.pair_fst P.fst P.snd))
-      (Category.comp_comp_eq (C := C) _ _ _ _ _ (P.pair_snd Q.fst Q.snd) (Q.pair_snd P.fst P.snd)))
+      (Category.comp_comp_eq _ _ _ _ _ (P.pair_fst Q.fst Q.snd) (Q.pair_fst P.fst P.snd))
+      (Category.comp_comp_eq _ _ _ _ _ (P.pair_snd Q.fst Q.snd) (Q.pair_snd P.fst P.snd)))
     (Product.hom_ext Q _ _
-      (Category.comp_comp_eq (C := C) _ _ _ _ _ (Q.pair_fst P.fst P.snd) (P.pair_fst Q.fst Q.snd))
-      (Category.comp_comp_eq (C := C) _ _ _ _ _ (Q.pair_snd P.fst P.snd) (P.pair_snd Q.fst Q.snd)))
+      (Category.comp_comp_eq _ _ _ _ _ (Q.pair_fst P.fst P.snd) (P.pair_fst Q.fst Q.snd))
+      (Category.comp_comp_eq _ _ _ _ _ (Q.pair_snd P.fst P.snd) (P.pair_snd Q.fst Q.snd)))
