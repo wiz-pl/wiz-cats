@@ -5,7 +5,7 @@ import Cats.Category
 
 def Category.op.{u, v} (C : Category.{u, v}) : Category.{u, v} :=
   Category.mk C.Obj (fun X Y => C.Hom Y X) C.id (fun f g => C.comp g f)
-    (fun f => C.comp_id f) (fun f => C.id_comp f) (fun f g h => eqSymm.{v} (C.assoc h g f))
+    (fun f => C.comp_id f) (fun f => C.id_comp f) (fun f g h => eqSymm (C.assoc h g f))
 
 -- taking the opposite twice gives the category back, definitionally
 -- (`refl C`: `rfl` takes over 2 GB here, FINDINGS.md, B3; `C.op.op` is P10)
@@ -18,9 +18,9 @@ def Category.prod.{u₁, v₁, u₂, v₂} (C : Category.{u₁, v₁}) (D : Cate
   Category.mk (C.Obj × D.Obj) (fun X Y => C.Hom X.1 Y.1 × D.Hom X.2 Y.2)
     (fun X => (C.id X.1, D.id X.2)) (fun f g => (C.comp f.1 g.1, D.comp f.2 g.2))
     -- (an equation of pairs needs `castRefl`: `pairEq`, FINDINGS.md, G6)
-    (fun f => pairEq.{v₁, v₂} (C.id_comp f.1) (D.id_comp f.2))
-    (fun f => pairEq.{v₁, v₂} (C.comp_id f.1) (D.comp_id f.2))
-    (fun f g h => pairEq.{v₁, v₂} (C.assoc f.1 g.1 h.1) (D.assoc f.2 g.2 h.2))
+    (fun f => pairEq (C.id_comp f.1) (D.id_comp f.2))
+    (fun f => pairEq (C.comp_id f.1) (D.comp_id f.2))
+    (fun f g h => pairEq (C.assoc f.1 g.1 h.1) (D.assoc f.2 g.2 h.2))
 
 -- ## Functor categories
 
