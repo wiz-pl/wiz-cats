@@ -114,8 +114,11 @@ projection `C.2.2.2.1`, and `(?C).2.2.2.1 ?f ?g =?= C.2.2.2.1 f g` is not decomp
 `?C =?= C`. (In Lean, `Category.comp ?C ?f ?g` is an application of a constant and the
 first-order approximation solves it.) So no lemma about morphisms of an implicit
 category can find the category from a morphism equation: every such use needs
-`(C := C)`. The holes for the objects and morphisms are then found.
-Here: `(C := C)` (`Product.unique`).
+`(C := C)`. The holes for the objects and morphisms are then found. It also makes
+the notation `f ≫ g` (`Category.cmp`, with `{ω C : Category}` implicit) unusable: the
+category is never found from `f : C.Hom X Y`.
+Here: `(C := C)` (`Product.unique`, the Yoneda embedding), and `C.comp f g` instead of
+`f ≫ g` everywhere.
 
 ### B6. `rw` with a functor law: "expected: C ⥤ D, inferred: C ⥤ D"
 

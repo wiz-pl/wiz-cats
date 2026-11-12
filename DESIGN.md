@@ -29,10 +29,10 @@ Wiz's equality is observational (Pujet and Tabareau's TTobs, CoreSpec §8). The 
 
 So the setoid structure of an E-category is *already* the equality of the hom-types,
 for every hom-type, and the extensional reasoning MLTT needs setoids for comes for free.
-We use plain hom-types and `=`. The one thing OTT gives us that is not free is a
-definitional `cast A A e x ≡ x` (regularity); Wiz has it only at inert types and offers
-the axiom `castRefl` otherwise (CoreSpec §8.4a). That shows up exactly once in this
-library's foundations, in `Functor.ext` (below).
+We use plain hom-types and `=`. The one thing OTT does not give us is a definitional
+`cast A A e x ≡ x` (regularity); Wiz has it only at inert types and offers the axiom
+`castRefl` otherwise (CoreSpec §8.4a). It matters for equations of structures (below),
+and J gets around it everywhere but one place (`UnitCounit.round`).
 
 ## Universe levels
 
@@ -66,8 +66,10 @@ bundled `C`). We use bundled structures with projections (`C.Hom X Y`, `C.comp f
 and local notation where it helps.
 
 Composition is in diagrammatic order, `comp f g : Hom X Z` for `f : Hom X Y`,
-`g : Hom Y Z` (`f ≫ g`), which keeps the implicit arguments in the order they are
-solved.
+`g : Hom Y Z` (`f ≫ g` in Mathlib's notation), so the implicit objects come in the
+order the morphisms are written. The notation itself is defined but not used: with a
+bundled category the elaborator can't find `C` from `f : C.Hom X Y` (FINDINGS.md, B5),
+so the library writes `C.comp f g`.
 
 The laws (`id_comp`, `comp_id`, `assoc`) are fields whose types are equations, so they
 are propositions, so:
@@ -84,20 +86,48 @@ That last point is the main win over MLTT: there, `NatTrans.ext` needs funext (a
 axiom) and proof irrelevance for the naturality square (a theorem about the hom-sets
 being sets, or another axiom).
 
-**Functor equality** is the one place the cast bites. When `F.obj` and `G.obj` are
-convertible the cast is `cast (D.Hom (F X) (F Y)) (D.Hom (F X) (F Y)) _ (F.map f)`, at
-a type variable (`D.Hom`), so it is stuck (no regularity); `castRefl` removes it. So
-`Functor.ext` takes the equation of the maps and returns the equation of the functors,
-and depends on the axiom `castRefl`. This is the analogue of `eq_of_heq`-style pain in
-Lean, but confined to one lemma.
+**Equality of structures with data fields** is where the cast bites. `F = G` for functors
+computes to `(e : F.obj = G.obj) × (cast … F.map = G.map)`, and the cast is at a type
+variable (`D.Hom`), so it is stuck even when `F.obj` and `G.obj` are convertible; worse,
+the cast of a function casts its arguments backwards too, so `castRefl` (which removes
+one outer cast) is not enough. The same happens to a plain pair `(a, b) = (a', b')`.
+Two ways round it:
 
-## What is where
+* **Congruence by J.** `pairEq e₁ e₂ := eqCongr2 (fun x y => (x, y)) e₁ e₂`: no cast is
+  ever written, and no axiom is used. For functors, `Fun.ext` does the same along an
+  equation of the maps, with the laws carried by a helper (`Fun.mkOf`) that transports
+  them along the equation; proof irrelevance makes the helper at the two ends
+  convertible with the two functors. This covers functors with the same object map.
+* **`castRefl`**, componentwise, where the later field's type doesn't mention the
+  earlier ones (`UnitCounit.round`).
 
-| file | contents |
-|---|---|
-| `src/Cats/Eq.wiz` | equality lemmas at any universe (lib/Logic.wiz has them at `Type` only) |
-| `src/Cats/Category.wiz` | `Category`, `Functor`, `NatTrans`, identities and composites, `Types` |
-| `src/Cats/Constructions.wiz` | opposite, product, functor categories |
-| … | |
+Functors whose object maps are only propositionally equal are not handled; Mathlib's
+`eqToHom` approach would be the next step.
 
-This table is filled in as the files land.
+## Quantities
+
+Wiz checks usage (QTT) everywhere, proofs included (FINDINGS.md, G2): a proof that passes
+a variable to an unerased argument uses it. So the library follows three rules:
+
+* every law takes its morphisms and objects at quantity 0
+  (`id_comp : {X Y : Obj} → (0 f : Hom X Y) → …`), and every equality lemma its proofs;
+* categories, functors and natural transformations whose data is used are bound
+  `{ω C : Category}`: implicit binders default to 0;
+* a proof by cases or induction (which needs its argument) is a separate function with
+  unerased binders, passed where an erased one is expected: the kernel accepts it by
+  subtyping, since a Π that is a proposition ignores quantities.
+
+## Limits, adjunctions, Yoneda
+
+* A limit is a structure: the object, the cone's morphisms, the lifting function and its
+  equations, and uniqueness (`uniq : (0 h : Hom Z obj) → h = pair (h ≫ fst) (h ≫ snd)`).
+  Uniqueness up to isomorphism is proved for terminal objects and products.
+* An adjunction is primarily the natural hom-bijection (`to`, `from`, the two inverse
+  laws, naturality of `to` on both sides; naturality of `from` is derived). The
+  unit-counit form is a second structure; each converts into the other.
+* The Yoneda lemma is stated for presheaves `P : Cᵒᵖ ⥤ Types.{v}` on a
+  `C : Category.{u, v}`, so the hom-types of `C` are objects of `Types.{v}` and no
+  `ULift` is needed. The Yoneda embedding lands in the functor category
+  `[Cᵒᵖ, Types.{v}]`, a `Category.{max u (v+1), max u v}`.
+
+The files are listed in README.md.

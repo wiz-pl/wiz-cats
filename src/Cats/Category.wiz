@@ -16,7 +16,8 @@ structure Category.{u, v} where
   assoc : {W X Y Z : Obj} → (0 f : Hom W X) → (0 g : Hom X Y) → (0 h : Hom Y Z) →
     comp (comp f g) h = comp f (comp g h)
 
--- `f ≫ g`, with the category found from the type of `f`
+-- `f ≫ g`, with the category found from the type of `f`. Unusable today: the category
+-- is not found (FINDINGS.md, B5), so the library writes `C.comp f g`.
 def Category.cmp.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (f : C.Hom X Y) (g : C.Hom Y Z) : C.Hom X Z :=
   C.comp f g
 infixr:80 " ≫ " => Category.cmp

@@ -1,0 +1,28 @@
+-- test: check
+-- Which results use an axiom. Only UnitCounit.round does (castRefl, FINDINGS.md, G6).
+import Cats.Adjunction
+import Cats.Limits
+import Cats.Yoneda
+import Cats.Examples
+#print axioms Types
+#print axioms Fun.comp
+#print axioms Fun.ext
+#print axioms NatTrans.vcomp
+#print axioms Category.op_op
+#print axioms Category.prod
+#print axioms Category.functors
+#print axioms Terminal.unique
+#print axioms Product.unique
+#print axioms Types.equaliser
+#print axioms Types.pullback
+#print axioms Adjunction.toUnitCounit
+#print axioms UnitCounit.toAdjunction
+#print axioms Adjunction.round_to
+#print axioms Adjunction.round_from
+#print axioms UnitCounit.round
+#print axioms Yoneda.of_to
+#print axioms Yoneda.to_of
+#print axioms Category.yoneda_fullyFaithful
+#print axioms List.functor
+#print axioms Option.functor
+#print axioms Monoid.Hom.toFun

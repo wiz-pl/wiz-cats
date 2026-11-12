@@ -1,0 +1,22 @@
+tests/axioms.wiz:7:1: info: 'Types' does not depend on any axioms
+tests/axioms.wiz:8:1: info: 'Fun.comp' does not depend on any axioms
+tests/axioms.wiz:9:1: info: 'Fun.ext' does not depend on any axioms
+tests/axioms.wiz:10:1: info: 'NatTrans.vcomp' does not depend on any axioms
+tests/axioms.wiz:11:1: info: 'Category.op_op' does not depend on any axioms
+tests/axioms.wiz:12:1: info: 'Category.prod' does not depend on any axioms
+tests/axioms.wiz:13:1: info: 'Category.functors' does not depend on any axioms
+tests/axioms.wiz:14:1: info: 'Terminal.unique' does not depend on any axioms
+tests/axioms.wiz:15:1: info: 'Product.unique' does not depend on any axioms
+tests/axioms.wiz:16:1: info: 'Types.equaliser' does not depend on any axioms
+tests/axioms.wiz:17:1: info: 'Types.pullback' does not depend on any axioms
+tests/axioms.wiz:18:1: info: 'Adjunction.toUnitCounit' does not depend on any axioms
+tests/axioms.wiz:19:1: info: 'UnitCounit.toAdjunction' does not depend on any axioms
+tests/axioms.wiz:20:1: info: 'Adjunction.round_to' does not depend on any axioms
+tests/axioms.wiz:21:1: info: 'Adjunction.round_from' does not depend on any axioms
+tests/axioms.wiz:22:1: info: 'UnitCounit.round' depends on axioms: [castRefl]
+tests/axioms.wiz:23:1: info: 'Yoneda.of_to' does not depend on any axioms
+tests/axioms.wiz:24:1: info: 'Yoneda.to_of' does not depend on any axioms
+tests/axioms.wiz:25:1: info: 'Category.yoneda_fullyFaithful' does not depend on any axioms
+tests/axioms.wiz:26:1: info: 'List.functor' does not depend on any axioms
+tests/axioms.wiz:27:1: info: 'Option.functor' does not depend on any axioms
+tests/axioms.wiz:28:1: info: 'Monoid.Hom.toFun' does not depend on any axioms
