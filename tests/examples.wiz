@@ -1,0 +1,9 @@
+-- test: check
+import Cats.Examples
+-- The functors from lib/Functor.wiz's instances compute as `Functor.map`, and the
+-- one-object category of a monoid composes by its multiplication. (The parentheses:
+-- `Option.functor.map` is read as a field `functor` of `Option`, FINDINGS.md, P10; the
+-- objects: a hole of type `Unit` is not solved, P15.)
+#eval (Option.functor).map (fun n => Nat.add n 1) (Option.some 41)
+#eval (List.functor).map (fun n => Nat.add n n) [1, 2, 3]
+#eval (Monoid.toCategory Nat.addMonoid).comp (X := ()) (Y := ()) (Z := ()) 2 3

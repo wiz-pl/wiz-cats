@@ -1,0 +1,85 @@
+import Functor
+import Cats.Category
+-- Examples: Wiz's own `Functor` class (lib/Functor.wiz, stage 13d) is a functor on the
+-- category of types, given its laws; a monoid is a category with one object.
+
+-- ## `Functor` instances are functors Types ⥤ Types
+--
+-- The class has `map` and no laws, so the laws are a structure of their own. (`Functor`
+-- is at `Type → Type`, so these are functors on `Types.{0}`, FINDINGS.md, G8.)
+
+structure LawfulFunctor (f : Type → Type) [i : Functor f] where
+  -- (the types are explicit so that instances can name them, FINDINGS.md, G7)
+  map_id : (0 A : Type) → (0 x : f A) → Functor.map (fun (a : A) => a) x = x
+  map_comp : (0 A B C : Type) → (0 g : A → B) → (0 h : B → C) → (0 x : f A) →
+    Functor.map (fun a => h (g a)) x = Functor.map h (Functor.map g x)
+
+def LawfulFunctor.toFun (f : Type → Type) [i : Functor f] (L : LawfulFunctor f) : Types.{0} ⥤ Types.{0} :=
+  Fun.mk f (fun g => Functor.map g) (fun X => fun (0 x : f X) => L.map_id X x) (fun g h => fun (0 x : f _) => L.map_comp _ _ _ g h x)
+
+-- ### Option
+
+-- (the laws are proved for unerased arguments, by cases, and passed as they are where
+-- erased ones are expected: subtyping, FINDINGS.md, G7)
+def Option.map_id' {A : Type} : (x : Option A) → Option.map (fun (a : A) => a) x = x
+  | .none => rfl
+  | .some a => rfl
+def Option.map_comp' {A B C : Type} (g : A → B) (h : B → C) : (x : Option A) →
+    Option.map (fun a => h (g a)) x = Option.map h (Option.map g x)
+  | .none => rfl
+  | .some a => rfl
+def Option.lawful : LawfulFunctor Option :=
+  LawfulFunctor.mk (fun A => Option.map_id' (A := A)) (fun A B C => Option.map_comp' (A := A) (B := B) (C := C))
+
+def Option.functor : Types.{0} ⥤ Types.{0} := LawfulFunctor.toFun Option Option.lawful
+
+-- ### List, by induction
+
+def List.map_id' {A : Type} : (xs : List A) → List.map (fun (a : A) => a) xs = xs
+  | .nil => rfl
+  | .cons x xs => eqCongr (fun l => List.cons x l) (List.map_id' xs)
+def List.map_comp' {A B C : Type} (g : A → B) (h : B → C) : (xs : List A) →
+    List.map (fun a => h (g a)) xs = List.map h (List.map g xs)
+  | .nil => rfl
+  | .cons x xs => eqCongr (fun l => List.cons (h (g x)) l) (List.map_comp' g h xs)
+
+def List.lawful : LawfulFunctor List :=
+  LawfulFunctor.mk (fun A => List.map_id' (A := A)) (fun A B C => List.map_comp' (A := A) (B := B) (C := C))
+
+def List.functor : Types.{0} ⥤ Types.{0} := LawfulFunctor.toFun List List.lawful
+
+-- ## A monoid is a category with one object
+
+structure Monoid.{u} : Type (u+1) where
+  carrier : Type u
+  one : carrier
+  mul : carrier → carrier → carrier
+  one_mul : (0 a : carrier) → mul one a = a
+  mul_one : (0 a : carrier) → mul a one = a
+  mul_assoc : (0 a b c : carrier) → mul (mul a b) c = mul a (mul b c)
+
+def Monoid.toCategory.{u} (M : Monoid.{u}) : Category.{0, u} :=
+  Category.mk Unit (fun _ _ => M.carrier) (fun _ => M.one) (fun a b => M.mul a b)
+    (fun a => M.one_mul a) (fun a => M.mul_one a) (fun a b c => M.mul_assoc a b c)
+
+-- a homomorphism of monoids is a functor between their categories
+structure Monoid.Hom.{u, v} (M : Monoid.{u}) (N : Monoid.{v}) : Type (max u v) where
+  fn : M.carrier → N.carrier
+  map_one : fn M.one = N.one
+  map_mul : (0 a b : M.carrier) → fn (M.mul a b) = N.mul (fn a) (fn b)
+
+def Monoid.Hom.toFun.{u, v} {M : Monoid.{u}} {N : Monoid.{v}} (h : Monoid.Hom M N) :
+    Monoid.toCategory M ⥤ Monoid.toCategory N :=
+  Fun.mk (fun _ => ()) (fun a => h.fn a) (fun _ => h.map_one) (fun a b => h.map_mul a b)
+
+-- the natural numbers under addition, and lists under append
+def Nat.add_zero' : (n : Nat) → Nat.add n 0 = n
+  | .zero => rfl
+  | .succ n => eqCongr Nat.succ (Nat.add_zero' n)
+def Nat.add_assoc' : (a b c : Nat) → Nat.add (Nat.add a b) c = Nat.add a (Nat.add b c)
+  | .zero, b, c => rfl
+  | .succ a, b, c => eqCongr Nat.succ (Nat.add_assoc' a b c)
+-- (the laws take erased arguments, and an erased number can't be taken apart, so they
+-- are proved with unerased ones and passed as they are: subtyping, FINDINGS.md, G7)
+def Nat.addMonoid : Monoid.{0} :=
+  Monoid.mk Nat 0 (fun a b => Nat.add a b) (fun a => rfl) Nat.add_zero' Nat.add_assoc'

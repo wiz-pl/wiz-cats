@@ -201,16 +201,19 @@ equal from an equation of their maps, by J and proof irrelevance, without `castR
 (DESIGN.md). Functors whose object maps are only propositionally equal are not handled
 yet.
 
-### G6. Equality of pairs needs an axiom
+### G6. Equality of pairs, componentwise, needs an axiom
 
 `(a, b) = (a', b')` at `A × B` computes to `(0 e : a = a') × (cast B B ê b = b')`, and
-the cast at a type variable `B` is stuck, so a product of categories can't prove its
-laws from its factors' without `castRefl`. Here: `pairEq` (`src/Cats/Eq.wiz`), by one
-`castRefl`; the product category depends on the axiom. A non-dependent pair is the
-commonest case of all (Σ types whose second component doesn't mention the first), and
-the cast `cast B B ê b` is between syntactically equal types; regularity just for a
-non-dependent Σ (the motive of `ê` doesn't use its variable) would remove the axiom
-from every such proof.
+the cast at a type variable `B` is stuck, so the obvious proof `⟨e₁, e₂⟩` is rejected
+and the componentwise proof needs `castRefl`. Congruence by J,
+`eqCongr2 (fun x y => (x, y)) e₁ e₂`, needs no axiom, and that is what `pairEq` does
+(`src/Cats/Eq.wiz`; the product category is axiom-free, `#print axioms`). The same
+holds for every structure: a later field is compared after a cast along the equations
+of the earlier ones, even when its type doesn't depend on them. `UnitCounit.round` (two
+natural-transformation fields) is proved componentwise with one `castRefl`; the
+J route would need the `Fun.mkOf` trick of `Fun.ext` (laws transported along the
+equation). A cheap improvement: regularity for the non-dependent case (the cast
+`cast B B ê b` between syntactically equal types).
 
 ### G7. Proof components of an erased subtype element can't be reached
 
@@ -225,10 +228,27 @@ subtyping (a Π that is a proposition ignores quantities, CoreSpec §11.5), but 
 all its implicit arguments given: the elaborator's unifier doesn't do that subtyping
 ("quantity mismatch") when holes are left. Here: `sigmaProp (A := A) (P := …)`.
 
+The same mismatch, the other way round, for proofs by induction: a law takes its
+argument erased (`map_id : (0 A : Type) → (0 x : f A) → map id x = x`, G2), and an
+erased value can't be matched on, so the proof by cases or induction is a separate
+function with unerased binders (`Option.map_id' : (x : Option A) → …`), passed by
+subtyping. That works only if the field's own type variables are explicit
+(`fun A => Option.map_id' (A := A)`): an implicit lambda is inserted for `{A}` and
+can't be named ("unexpected implicit binder"), and without the name the hole for `A`
+makes the elaborator's unifier refuse the quantities. Here: `LawfulFunctor`'s types
+are explicit binders (`src/Cats/Examples.wiz`).
+
 Related: a Σ binder can't carry a quantity in a term (`(a : A) × (0 _ : f a = g a)` is
 "function expected 0 : Nat"), so a subtype's proof component is ω, and building one
 from an erased proof is rejected (G2). The equaliser's and pullback's `lift` take
 their proof at ω for that reason.
+
+### G8. lib/Functor.wiz's `Functor` is at `Type → Type` and has no laws
+
+So the functors that the instances give are functors on `Types.{0}` only, and the laws
+are a separate structure (`LawfulFunctor`, with proofs for `Option` and `List`). A
+universe-polymorphic `Functor.{u, v} (f : Type u → Type v)` and a `LawfulFunctor` class
+in the library would make `Types.{u} ⥤ Types.{v}` available for every instance.
 
 ## Papercuts
 
@@ -278,8 +298,10 @@ their proof at ω for that reason.
 * **P10.** No generalised field notation: `S.hom_ext` for `S : Terminal C` (meaning
   `Terminal.hom_ext S`) and `C.op.op` are "no field 'hom_ext' in a value of type
   (0 fields✝ : Enum [fields✝]) → Unit…": only real fields are found, and the error
-  names the Σ's last component instead of the structure. Here: `Terminal.hom_ext S`,
-  `Category.op (Category.op C)`.
+  names the Σ's last component instead of the structure. Also, `Option.functor.map`
+  (the field `map` of the constant `Option.functor`) is read as a field `functor` of
+  `Option`. Here: `Terminal.hom_ext S`, `Category.op (Category.op C)`,
+  `(Option.functor).map`.
 
 * **P11.** `rw` doesn't try `rfl` afterwards: after `rw (C.id_comp f)` the goal `f = f` is
   left open (`repro/b6-rw-functor.wiz`).
@@ -294,6 +316,10 @@ their proof at ω for that reason.
   lambda inside a constructor: `(fun Y => fun g => C.id_comp g)` against the computed
   `(0 x : C.Hom Y X) → …` is "quantity mismatch", because the lambda was elaborated
   before the equation computed (P9). `fun (0 g : C.Hom Y X) => …` works.
+
+* **P15.** A hole of type `Unit` is not solved: `(Monoid.toCategory M).comp 2 3`, whose
+  objects are of type `Unit`, is "could not infer implicit argument X" (η for `Unit`
+  makes `()` the only solution). Here: `(X := ()) (Y := ()) (Z := ())`.
 
 ## What works well
 
