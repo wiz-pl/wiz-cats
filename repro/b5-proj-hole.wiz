@@ -2,6 +2,7 @@
 import Cats.Category
 -- FINDINGS.md, B5: the category of `lem` is not found from `e : C.comp f g = h`:
 -- `(?C).comp ?f ?g =?= C.comp f g` is "outside the pattern fragment".
+-- Fixed in wiz #239: everything here checks (the expected output is empty).
 def lem.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
     (0 e : C.comp f g = h) : h = C.comp f g := eqSymm.{v} e
 def bad.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
@@ -9,4 +10,4 @@ def bad.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g :
 def ok.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z) (0 h : C.Hom X Z)
     (0 e : C.comp f g = h) : h = C.comp f g := lem (C := C) _ _ _ e
 -- the same makes the notation `f ≫ g` (src/Cats/Category.wiz) unusable
-def notation.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (f : C.Hom X Y) (g : C.Hom Y Z) : C.Hom X Z := f ≫ g
+def useNotation.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (f : C.Hom X Y) (g : C.Hom Y Z) : C.Hom X Z := f ≫ g
