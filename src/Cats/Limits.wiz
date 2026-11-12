@@ -30,8 +30,8 @@ def Terminal.hom_ext.{u, v} {C : Category.{u, v}} (T : Terminal C) {X : C.Obj} (
 -- two terminal objects are isomorphic
 def Terminal.unique.{u, v} {ω C : Category.{u, v}} (S T : Terminal C) : Iso C S.obj T.obj :=
   Iso.mk (T.lift S.obj) (S.lift T.obj)
-    (Terminal.hom_ext S (C.comp (T.lift S.obj) (S.lift T.obj)) (C.id S.obj))
-    (Terminal.hom_ext T (C.comp (S.lift T.obj) (T.lift S.obj)) (C.id T.obj))
+    (Terminal.hom_ext S (T.lift S.obj ≫ S.lift T.obj) (C.id S.obj))
+    (Terminal.hom_ext T (S.lift T.obj ≫ T.lift S.obj) (C.id T.obj))
 
 -- ## Binary products
 
@@ -101,16 +101,16 @@ def Types.pullback.{u} {A B C : Type u} (f : A → C) (g : B → C) : Pullback T
 
 -- two morphisms into a product are equal when their components are
 def Product.hom_ext.{u, v} {C : Category.{u, v}} {X Y : C.Obj} (P : Product C X Y) {Z : C.Obj}
-    (0 h k : C.Hom Z P.obj) (0 e₁ : C.comp h P.fst = C.comp k P.fst) (0 e₂ : C.comp h P.snd = C.comp k P.snd) : h = k :=
+    (0 h k : C.Hom Z P.obj) (0 e₁ : h ≫ P.fst = k ≫ P.fst) (0 e₂ : h ≫ P.snd = k ≫ P.snd) : h = k :=
   eqTrans (P.uniq h)
     (eqTrans (eqCongr2 (fun a b => P.pair a b) e₁ e₂) (eqSymm (P.uniq k)))
 
 -- `i ≫ j ≫ P.fst = P.fst` when `j ≫ P.fst = Q.fst` and `i ≫ Q.fst = P.fst`
 def Category.comp_comp_eq.{u, v} {ω C : Category.{u, v}} {W X Y Z : C.Obj}
     (0 i : C.Hom W X) (0 j : C.Hom X Y) (0 p : C.Hom Y Z) (0 q : C.Hom X Z) (0 r : C.Hom W Z)
-    (0 e₁ : C.comp j p = q) (0 e₂ : C.comp i q = r) : C.comp (C.comp i j) p = C.comp (C.id W) r :=
+    (0 e₁ : j ≫ p = q) (0 e₂ : i ≫ q = r) : (i ≫ j) ≫ p = C.id W ≫ r :=
   eqTrans (C.assoc i j p)
-    (eqTrans (eqCongr (fun m => C.comp i m) e₁)
+    (eqTrans (eqCongr (fun m => i ≫ m) e₁)
       (eqTrans e₂ (eqSymm (C.id_comp r))))
 
 def Product.unique.{u, v} {ω C : Category.{u, v}} {X Y : C.Obj} (P Q : Product C X Y) : Iso C P.obj Q.obj :=
