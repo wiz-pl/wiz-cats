@@ -43,6 +43,19 @@ def Fun.comp.{u₁, v₁, u₂, v₂, u₃, v₃} {C : Category.{u₁, v₁}} {D
     (fun f g => eqTrans.{v₃} (eqCongr.{v₂, v₃} (fun h => G.map h) (F.map_comp f g)) (G.map_comp (F.map f) (F.map g)))
 infixr:80 " ⋙ " => Fun.comp
 
+-- Functor composition is associative and `Fun.id` is a two-sided unit, definitionally
+-- (structure η: an equation of functors computes to the equations of `obj` and `map`;
+-- the laws are proofs and drop out). The laws that mention `Fun.id C` bind `C` at ω:
+-- projecting `C` in the *statement* is refused at quantity 0 (FINDINGS.md, B2).
+def Fun.id_comp.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}}
+    (F : C ⥤ D) : Fun.comp (Fun.id C) F = F := rfl
+def Fun.comp_id.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}}
+    (F : C ⥤ D) : Fun.comp F (Fun.id D) = F := rfl
+def Fun.comp_assoc.{u₁, v₁, u₂, v₂, u₃, v₃, u₄, v₄}
+    {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} {E : Category.{u₃, v₃}} {F : Category.{u₄, v₄}}
+    (G : C ⥤ D) (H : D ⥤ E) (K : E ⥤ F) :
+    Fun.comp (Fun.comp G H) K = Fun.comp G (Fun.comp H K) := rfl
+
 -- ## Equality of functors
 --
 -- An equation of two functors computes to the Σ of the equations of `obj` and of a cast

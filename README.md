@@ -13,7 +13,7 @@ equality) the way a stranger would, and to write down what that was like: see
 | file | contents |
 |---|---|
 | `src/Cats/Eq.wiz` | equality lemmas at every universe; J as a function; equality of pairs |
-| `src/Cats/Category.wiz` | `Category.{u, v}`, functors `C ⥤ D`, composition, `Fun.ext`, natural transformations, the category of types `Types.{u}`, fully faithful functors |
+| `src/Cats/Category.wiz` | `Category.{u, v}`, functors `C ⥤ D`, composition and its laws (`Fun.comp_assoc`, `Fun.id_comp`, `Fun.comp_id`), `Fun.ext`, natural transformations, the category of types `Types.{u}`, fully faithful functors |
 | `src/Cats/Constructions.wiz` | the opposite category (`op (op C) = C` definitionally), products of categories, functor categories |
 | `src/Cats/Limits.wiz` | isomorphisms; terminal objects, binary products, equalisers, pullbacks as universal properties; terminal objects and products are unique up to isomorphism; the limits of `Types` |
 | `src/Cats/Adjunction.wiz` | adjunctions as natural hom-bijections and as unit and counit with the triangle identities; each gives the other; the round trips |

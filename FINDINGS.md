@@ -11,6 +11,18 @@ what this library does instead. Severity:
 
 Timings are rough (single runs through `light` on a shared machine), not measurements.
 
+## Status at the pinned toolchain (2026-11-14)
+
+The reproducers under `repro/` are checked at `50cd3e7`, and B1, B5, B6 and B7 still
+fail there (their expected output is today's error): on *this* toolchain they are open.
+Branch `cleanup` records them as fixed by wiz PRs #239/#230; those PRs are not in
+`50cd3e7` (its toolchain is a local build of master + #230 + #239 + #221 + #227), so
+that status does not transfer to this pin. B2–B4, G1–G8 and the papercuts are open here
+too. This branch advances **B2**: the repro is the minimal one-field version, the kernel
+rule that causes it is named (`Wiz/Core/Check.lean`, `.refl`), and its statement-level
+form is pinned by the new functor unit laws (`Fun.id_comp`, `Fun.comp_id` need
+`{ω C}`/`{ω D}`, src/Cats/Category.wiz, tests/laws.wiz).
+
 ## Bugs
 
 ### B1. Universe levels fixed only by an implicit argument's type are never solved
@@ -59,17 +71,29 @@ Both are all over `src/Cats/Category.wiz`. This is the most frequent failure so 
 ```
 structure P where
   a : Nat
-  b : Nat
 def lem0 (0 n : Nat) : n = n := refl n
-def ok {0 p : P} : p.b = p.b := lem0 p.b    -- accepted
+def ok {0 p : P} : p.a = p.a := lem0 p.a    -- accepted
 def bad {0 p : P} : p.a = p.a := refl p.a   -- rejected: cannot project p.1 … p has quantity 0
 ```
 
-`refl` is a proof and has no usage (CoreSpec §8.1), but its argument is checked in the
-unerased context, so a projection of an erased structure in it is refused. The same
-happens for `rfl`: `F ⋙ Fun.id D = F := rfl` with `D` implicit is rejected ("cannot
-project (Fun.id D).1 … uses D, which has quantity 0"). (`repro/b2-refl-usage.wiz`)
-Here: the categories are bound at ω where `rfl` mentions them.
+(`repro/b2-refl-usage.wiz`; one field is enough.) `refl` is a proof and has no usage
+(CoreSpec §8.1), but its argument is checked in the unerased context, so a projection of
+an erased structure in it is refused. The kernel rule is `| .refl A a` in
+`Wiz/Core/Check.lean`: `let _ ← check ctx a (ctx.eval A)` — the ambient `ctx`, not an
+erased one. The projection rule then calls `projUsage`, which rejects a variable held at
+quantity 0 unless `ctx.erased` is set; an *erased position* is one scaled by 0
+(`Ctx.erasedAt`), which is why the *type* `p.a = p.a` is fine (types are checked erased)
+and why `lem0 p.a` is fine (the argument of a `0` binder is checked erased), but the
+data argument of `refl` is not.
+
+The same happens at the statement level: `F ⋙ Fun.id D = F` with `{D : Category}` fails
+before any proof, so the unit laws of functor composition need `{ω C}`/`{ω D}`
+(src/Cats/Category.wiz `Fun.id_comp`, `Fun.comp_id`; tests/laws.wiz).
+Here: the categories are bound at ω where `rfl` mentions them, and a projection is
+passed through a lemma whose binder is at 0 (`lem0 p.a`) when only the proof's argument
+needs it. The general fix is the one G2 asks for: check the arguments of a proof whose
+type is a proposition in the erased fragment (or `refl`'s argument, which is data only
+for the equation's indices).
 
 ### B3. `rfl` at an equation of two categories takes over 2 GB
 

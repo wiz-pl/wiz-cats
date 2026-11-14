@@ -1,0 +1,8 @@
+-- test: check
+import Cats.Category
+-- the functor laws: composition is associative and `Fun.id` is a two-sided unit.
+-- (Both unit laws need `{ω C}`/`{ω D}` in their statements, FINDINGS.md, B2: with the
+-- default quantity 0, `Fun.id C` cannot project `C` even in a statement.)
+#print axioms Fun.id_comp
+#print axioms Fun.comp_id
+#print axioms Fun.comp_assoc
