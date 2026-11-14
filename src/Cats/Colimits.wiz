@@ -1,0 +1,174 @@
+import Cats.Limits
+-- Colimits: initial objects, binary coproducts, coequalisers and pushouts, as the
+-- universal properties dual to the limits in Limits.wiz; the colimits of Types; and
+-- the formal duality that turns a limit in `C` into a colimit in `Cᵒᵖ`.
+--
+-- We do not introduce a general theory of diagrams and (co)cones here: the four
+-- shapes below are what the library's limits already cover, and each universal
+-- property is stated directly. Coequalisers and pushouts in `Types` would need a
+-- quotient, which Wiz does not have (FINDINGS.md, G9); the initial object and binary
+-- coproducts of `Types` are here.
+
+-- ## Initial objects
+
+structure Initial.{u, v} (C : Category.{u, v}) : Type (max u v) where
+  obj : C.Obj
+  refute : (X : C.Obj) → C.Hom obj X
+  uniq : {X : C.Obj} → (0 f : C.Hom obj X) → f = refute X
+
+-- any two morphisms out of an initial object are equal
+def Initial.hom_ext.{u, v} {C : Category.{u, v}} (I : Initial C) {X : C.Obj} (0 f g : C.Hom I.obj X) : f = g :=
+  eqTrans (I.uniq f) (eqSymm (I.uniq g))
+
+-- two initial objects are isomorphic
+def Initial.unique.{u, v} {ω C : Category.{u, v}} (S T : Initial C) : Iso C S.obj T.obj :=
+  Iso.mk (S.refute T.obj) (T.refute S.obj)
+    (Initial.hom_ext S (S.refute T.obj ≫ T.refute S.obj) (C.id S.obj))
+    (Initial.hom_ext T (T.refute S.obj ≫ S.refute T.obj) (C.id T.obj))
+
+-- ## Binary coproducts
+
+structure Coproduct.{u, v} (C : Category.{u, v}) (X Y : C.Obj) : Type (max u v) where
+  obj : C.Obj
+  inl : C.Hom X obj
+  inr : C.Hom Y obj
+  sum : {Z : C.Obj} → C.Hom X Z → C.Hom Y Z → C.Hom obj Z
+  inl_sum : {Z : C.Obj} → (0 f : C.Hom X Z) → (0 g : C.Hom Y Z) →
+    C.comp inl (sum f g) = f
+  inr_sum : {Z : C.Obj} → (0 f : C.Hom X Z) → (0 g : C.Hom Y Z) →
+    C.comp inr (sum f g) = g
+  uniq : {Z : C.Obj} → (0 h : C.Hom obj Z) → h = sum (C.comp inl h) (C.comp inr h)
+
+-- two morphisms out of a coproduct are equal when their components are
+def Coproduct.hom_ext.{u, v} {C : Category.{u, v}} {X Y : C.Obj} (P : Coproduct C X Y) {Z : C.Obj}
+    (0 h k : C.Hom P.obj Z) (0 e₁ : P.inl ≫ h = P.inl ≫ k) (0 e₂ : P.inr ≫ h = P.inr ≫ k) : h = k :=
+  eqTrans (P.uniq h)
+    (eqTrans (eqCongr2 (fun a b => P.sum a b) e₁ e₂) (eqSymm (P.uniq k)))
+
+-- `i ≫ j ≫ p = r` when `i ≫ j = q` and `q ≫ p = r` (the dual of
+-- `Category.comp_comp_eq` in Limits.wiz, with the morphisms written the other way)
+def Category.comp_comp_eq'.{u, v} {ω C : Category.{u, v}} {W X Y Z : C.Obj}
+    (0 i : C.Hom W X) (0 j : C.Hom X Y) (0 p : C.Hom Y Z) (0 q : C.Hom W Y) (0 r : C.Hom W Z)
+    (0 e₁ : i ≫ j = q) (0 e₂ : q ≫ p = r) : i ≫ j ≫ p = r ≫ C.id Z :=
+  eqTrans (eqSymm (C.assoc i j p))
+    (eqTrans (eqCongr (fun m => m ≫ p) e₁)
+      (eqTrans e₂ (eqSymm (C.comp_id r))))
+
+def Coproduct.unique.{u, v} {ω C : Category.{u, v}} {X Y : C.Obj} (P Q : Coproduct C X Y) : Iso C P.obj Q.obj :=
+  Iso.mk (P.sum Q.inl Q.inr) (Q.sum P.inl P.inr)
+    (Coproduct.hom_ext P _ _
+      (Category.comp_comp_eq' _ _ _ _ _
+        (P.inl_sum Q.inl Q.inr) (Q.inl_sum P.inl P.inr))
+      (Category.comp_comp_eq' _ _ _ _ _
+        (P.inr_sum Q.inl Q.inr) (Q.inr_sum P.inl P.inr)))
+    (Coproduct.hom_ext Q _ _
+      (Category.comp_comp_eq' _ _ _ _ _
+        (Q.inl_sum P.inl P.inr) (P.inl_sum Q.inl Q.inr))
+      (Category.comp_comp_eq' _ _ _ _ _
+        (Q.inr_sum P.inl P.inr) (P.inr_sum Q.inl Q.inr)))
+
+-- ## Coequalisers
+
+structure Coequaliser.{u, v} (C : Category.{u, v}) {X Y : C.Obj} (f g : C.Hom X Y) : Type (max u v) where
+  obj : C.Obj
+  π : C.Hom Y obj
+  cond : C.comp f π = C.comp g π
+  lift : {Z : C.Obj} → (h : C.Hom Y Z) → (C.comp f h = C.comp g h) → C.Hom obj Z
+  lift_π : {Z : C.Obj} → (0 h : C.Hom Y Z) → (0 e : C.comp f h = C.comp g h) →
+    C.comp π (lift h e) = h
+  uniq : {Z : C.Obj} → (0 k : C.Hom obj Z) → k = lift (C.comp π k)
+    (eqTrans.{v} (eqSymm.{v} (C.assoc f π k))
+      (eqTrans.{v} (eqCongr.{v, v} (fun m => C.comp m k) cond) (C.assoc g π k)))
+
+-- ## Pushouts
+
+structure Pushout.{u, v} (C : Category.{u, v}) {X Y Z : C.Obj} (f : C.Hom Z X) (g : C.Hom Z Y) :
+    Type (max u v) where
+  obj : C.Obj
+  inl : C.Hom X obj
+  inr : C.Hom Y obj
+  cond : C.comp f inl = C.comp g inr
+  lift : {W : C.Obj} → (h : C.Hom X W) → (k : C.Hom Y W) → (C.comp f h = C.comp g k) → C.Hom obj W
+  lift_inl : {W : C.Obj} → (0 h : C.Hom X W) → (0 k : C.Hom Y W) → (0 e : C.comp f h = C.comp g k) →
+    C.comp inl (lift h k e) = h
+  lift_inr : {W : C.Obj} → (0 h : C.Hom X W) → (0 k : C.Hom Y W) → (0 e : C.comp f h = C.comp g k) →
+    C.comp inr (lift h k e) = k
+  uniq : {W : C.Obj} → (0 m : C.Hom obj W) → m = lift (C.comp inl m) (C.comp inr m)
+    (eqTrans.{v} (eqSymm.{v} (C.assoc f inl m))
+      (eqTrans.{v} (eqCongr.{v, v} (fun n => C.comp n m) cond) (C.assoc g inr m)))
+
+-- ## The colimits of the category of types
+
+def Types.emptyEq.{u} {X : Type u} (f : Empty.{u+1} → X) :
+    f = (fun (e : Empty.{u+1}) => absurd e) :=
+  fun e => absurd e
+
+def Types.initial.{u} : Initial Types.{u} :=
+  Initial.mk Empty.{u+1} (fun X (e : Empty.{u+1}) => absurd e)
+    (fun f => Types.emptyEq f)
+
+-- a local sum type: lib has `Sum` only at `Type` (in Eff.wiz), and this is at `Type u`
+inductive Sum.{u} (A B : Type u) : Type u where
+  | inl (a : A)
+  | inr (b : B)
+
+def Sum.elim.{u} {A B C : Type u} (f : A → C) (g : B → C) : Sum A B → C
+  | .inl a => f a
+  | .inr b => g b
+
+-- the equation of two functions out of `Sum` is pointwise, and the point is erased
+-- (FINDINGS.md, G7): `Sum.etaAux` does the case analysis with an unerased point
+def Sum.etaAux.{u} {A B C : Type u} (h : Sum A B → C) (s : Sum A B) :
+    h s = Sum.elim (fun a => h (Sum.inl a)) (fun b => h (Sum.inr b)) s :=
+  match s with
+  | .inl a => rfl
+  | .inr b => rfl
+
+def Sum.eta.{u} {A B C : Type u} (h : Sum A B → C) :
+    h = Sum.elim (fun a => h (Sum.inl a)) (fun b => h (Sum.inr b)) :=
+  fun s => Sum.etaAux h s
+
+def Types.coproduct.{u} (A B : Type u) : Coproduct Types.{u} A B :=
+  Coproduct.mk (Sum A B) Sum.inl Sum.inr (fun f g => Sum.elim f g)
+    (fun f g => rfl) (fun f g => rfl) (fun h => Sum.eta h)
+
+-- ## Duality: a limit in `C` is a colimit in `Cᵒᵖ`, and conversely
+
+-- (`Category.op` is definitional, so the fields are the same morphisms; only the
+-- composition in the laws is reversed.)
+
+def Terminal.op.{u, v} {C : Category.{u, v}} (T : Terminal C) : Initial (Category.op C) :=
+  Initial.mk T.obj T.lift (fun f => T.uniq f)
+
+def Initial.op.{u, v} {C : Category.{u, v}} (I : Initial C) : Terminal (Category.op C) :=
+  Terminal.mk I.obj I.refute (fun f => I.uniq f)
+
+def Product.op.{u, v} {C : Category.{u, v}} {X Y : C.Obj} (P : Product C X Y) :
+    Coproduct (Category.op C) X Y :=
+  Coproduct.mk P.obj P.fst P.snd (fun f g => P.pair f g)
+    (fun f g => P.pair_fst f g) (fun f g => P.pair_snd f g) (fun h => P.uniq h)
+
+def Coproduct.op.{u, v} {C : Category.{u, v}} {X Y : C.Obj} (P : Coproduct C X Y) :
+    Product (Category.op C) X Y :=
+  Product.mk P.obj P.inl P.inr (fun f g => P.sum f g)
+    (fun f g => P.inl_sum f g) (fun f g => P.inr_sum f g) (fun h => P.uniq h)
+
+def Equaliser.op.{u, v} {C : Category.{u, v}} {X Y : C.Obj} {f g : C.Hom X Y}
+    (E : Equaliser C f g) : Coequaliser (Category.op C) (X := Y) (Y := X) f g :=
+  Coequaliser.mk E.obj E.ι E.cond (fun h e => E.lift h e)
+    (fun h e => E.lift_ι h e) (fun k => E.uniq k)
+
+def Coequaliser.op.{u, v} {C : Category.{u, v}} {X Y : C.Obj} {f g : C.Hom X Y}
+    (Q : Coequaliser C f g) : Equaliser (Category.op C) (X := Y) (Y := X) f g :=
+  Equaliser.mk Q.obj Q.π Q.cond (fun h e => Q.lift h e)
+    (fun h e => Q.lift_π h e) (fun k => Q.uniq k)
+
+def Pullback.op.{u, v} {C : Category.{u, v}} {X Y Z : C.Obj} {f : C.Hom X Z} {g : C.Hom Y Z}
+    (P : Pullback C f g) : Pushout (Category.op C) f g :=
+  Pushout.mk P.obj P.π₁ P.π₂ P.cond (fun h k e => P.lift h k e)
+    (fun h k e => P.lift_π₁ h k e) (fun h k e => P.lift_π₂ h k e) (fun m => P.uniq m)
+
+def Pushout.op.{u, v} {C : Category.{u, v}} {X Y Z : C.Obj} {f : C.Hom Z X} {g : C.Hom Z Y}
+    (P : Pushout C f g) : Pullback (Category.op C) f g :=
+  Pullback.mk P.obj P.inl P.inr P.cond (fun h k e => P.lift h k e)
+    (fun h k e => P.lift_inl h k e) (fun h k e => P.lift_inr h k e) (fun m => P.uniq m)

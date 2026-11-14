@@ -1,0 +1,10 @@
+tests/colimits.wiz:7:1: info: Types.initial : Initial Types
+tests/colimits.wiz:8:1: info: Types.coproduct : (A : Type ?u0) → (B : Type ?u0) → Coproduct Types A B
+tests/colimits.wiz:9:1: info: Initial.unique : {ω C : Category} → (S : Initial C) → (T : Initial C) → Iso C S.1 T.1
+tests/colimits.wiz:10:1: info: Coproduct.unique : {ω C : Category} → {X : C.1} → {Y : C.1} → (P : Coproduct C X Y) → (Q : Coproduct C X Y) → Iso C P.1 Q.1
+tests/colimits.wiz:11:1: info: Terminal.op : {C : Category} → Terminal C → Initial (Category.op C)
+tests/colimits.wiz:12:1: info: Product.op : {C : Category} → {X : C.1} → {Y : C.1} → Product C X Y → Coproduct (Category.op C) X Y
+tests/colimits.wiz:13:1: info: Equaliser.op : {C : Category} → {X : C.1} → {Y : C.1} → {f : C.2.1 X Y} → {g : C.2.1 X Y} → Equaliser C X Y f g → Coequaliser (Category.op C) Y X f g
+tests/colimits.wiz:14:1: info: Pullback.op : {C : Category} → {X : C.1} → {Y : C.1} → {Z : C.1} → {f : C.2.1 X Z} → {g : C.2.1 Y Z} → Pullback C X Y Z f g → Pushout (Category.op C) X Y Z f g
+tests/colimits.wiz:18:1: info: 4
+tests/colimits.wiz:20:1: info: 6

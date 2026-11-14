@@ -16,6 +16,7 @@ equality) the way a stranger would, and to write down what that was like: see
 | `src/Cats/Category.wiz` | `Category.{u, v}`, functors `C ⥤ D`, composition and its laws (`Fun.comp_assoc`, `Fun.id_comp`, `Fun.comp_id`), `Fun.ext`, natural transformations, the category of types `Types.{u}`, fully faithful functors |
 | `src/Cats/Constructions.wiz` | the opposite category (`op (op C) = C` definitionally), products of categories, functor categories |
 | `src/Cats/Limits.wiz` | isomorphisms; terminal objects, binary products, equalisers, pullbacks as universal properties; terminal objects and products are unique up to isomorphism; the limits of `Types` |
+| `src/Cats/Colimits.wiz` | initial objects, binary coproducts, coequalisers and pushouts; initial objects and coproducts are unique up to isomorphism; the initial object and coproducts of `Types`; the duality that sends a limit in `C` to a colimit in `Cᵒᵖ` |
 | `src/Cats/Adjunction.wiz` | adjunctions as natural hom-bijections and as unit and counit with the triangle identities; each gives the other; the round trips |
 | `src/Cats/Yoneda.wiz` | representable presheaves, the Yoneda lemma, the Yoneda embedding, which is fully faithful |
 | `src/Cats/Examples.wiz` | the instances of lib/Functor.wiz (`Option`, `List`) as functors `Types ⥤ Types`, with their laws; a monoid as a one-object category, monoid homomorphisms as functors |
@@ -36,6 +37,9 @@ nix develop
 grail build      # check the library: a few seconds
 grail test       # tests/ and repro/
 ```
+
+The suite has 14 tests: 6 under `tests/` (including `colimits.wiz`, which checks the
+colimits and their duality) and 8 reproducers under `repro/`.
 
 A `repro/` test that fails means Wiz's behaviour changed: the test pins what the
 pinned toolchain does, including the errors that are still open (and a fixed reproducer

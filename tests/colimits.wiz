@@ -1,0 +1,21 @@
+-- test: check
+import Cats.Colimits
+-- The colimits and their duality: an initial object and binary coproducts, the
+-- coequalisers and pushouts (as structures), the colimits of `Types`, and the passage
+-- from a limit in `C` to a colimit in `Cᵒᵖ`. The uniqueness lemmas are in
+-- tests/axioms.wiz.
+#check Types.initial
+#check Types.coproduct
+#check Initial.unique
+#check Coproduct.unique
+#check Terminal.op
+#check Product.op
+#check Equaliser.op
+#check Pullback.op
+
+-- the coproduct of types computes: the two injections are the constructors, and the
+-- mediator is `Sum.elim`
+#eval Coproduct.sum (Types.coproduct Nat Nat) (Z := Nat)
+  (fun n => Nat.succ n) (fun n => Nat.add n n) (Sum.inl 3)
+#eval Coproduct.sum (Types.coproduct Nat Nat) (Z := Nat)
+  (fun n => Nat.succ n) (fun n => Nat.add n n) (Sum.inr 3)

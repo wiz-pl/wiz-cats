@@ -118,11 +118,26 @@ a variable to an unerased argument uses it. So the library follows three rules:
   unerased binders, passed where an erased one is expected: the kernel accepts it by
   subtyping, since a Π that is a proposition ignores quantities.
 
-## Limits, adjunctions, Yoneda
+## Limits, colimits, adjunctions, Yoneda
 
 * A limit is a structure: the object, the cone's morphisms, the lifting function and its
   equations, and uniqueness (`uniq : (0 h : Hom Z obj) → h = pair (h ≫ fst) (h ≫ snd)`).
   Uniqueness up to isomorphism is proved for terminal objects and products.
+* A colimit is the same structure with the arrows reversed, and is written directly
+  rather than as a limit in the opposite category: an initial object, a binary
+  coproduct, a coequaliser, a pushout. There is no general theory of diagrams and
+  (co)cones: those four shapes are what the limits already cover. Uniqueness up to
+  isomorphism is proved for initial objects and coproducts.
+* `Category.op` is a `def` whose projections compute, so a limit in `C` *is* a colimit
+  in `Cᵒᵖ` field for field (`Terminal.op`, `Product.op`, `Equaliser.op`,
+  `Pullback.op`), and conversely. This is why the dualities need no transport: the only
+  change is the direction of `comp`, which is definitional.
+* The initial object of `Types` is `Empty`, and the coproduct of two types is a local
+  universe-polymorphic `Sum` (`Sum.inl`/`Sum.inr`, `Sum.elim`). The coproduct's
+  uniqueness proof is pointwise and the point is erased, so `Sum.eta` does the case
+  split in a helper with an unerased argument (FINDINGS.md, G7). Coequalisers and
+  pushouts in `Types` would need a quotient, which Wiz does not have (FINDINGS.md, G9);
+  only their universal properties are here.
 * An adjunction is primarily the natural hom-bijection (`to`, `from`, the two inverse
   laws, naturality of `to` on both sides; naturality of `from` is derived). The
   unit-counit form is a second structure; each converts into the other.

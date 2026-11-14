@@ -2,6 +2,7 @@
 -- Which results use an axiom. Only UnitCounit.round does (castRefl, FINDINGS.md, G6).
 import Cats.Adjunction
 import Cats.Limits
+import Cats.Colimits
 import Cats.Yoneda
 import Cats.Examples
 #print axioms Types
@@ -15,6 +16,20 @@ import Cats.Examples
 #print axioms Product.unique
 #print axioms Types.equaliser
 #print axioms Types.pullback
+#print axioms Types.initial
+#print axioms Types.coproduct
+#print axioms Initial.unique
+#print axioms Coproduct.unique
+#print axioms Initial.hom_ext
+#print axioms Coproduct.hom_ext
+#print axioms Terminal.op
+#print axioms Initial.op
+#print axioms Product.op
+#print axioms Coproduct.op
+#print axioms Equaliser.op
+#print axioms Coequaliser.op
+#print axioms Pullback.op
+#print axioms Pushout.op
 #print axioms Adjunction.toUnitCounit
 #print axioms UnitCounit.toAdjunction
 #print axioms Adjunction.round_to
