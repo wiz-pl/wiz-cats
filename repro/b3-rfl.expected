@@ -1,0 +1,2 @@
+repro/b3-rfl.wiz:9:1: info: 'slow' does not depend on any axioms
+repro/b3-rfl.wiz:10:1: info: 'fast' does not depend on any axioms

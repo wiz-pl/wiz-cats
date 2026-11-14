@@ -6,7 +6,9 @@ import Prelude
 -- (`lem0 p.a`) is checked in the erased fragment, where a 0-quantity structure may be
 -- projected. At the pinned toolchain both check: a term whose type is a proposition is
 -- checked erased (the G2 fix), which reaches `refl`'s argument too. The kernel rule
--- (`Wiz/Core/Check.lean`, `.refl`) is still the old one; that is a separate change.
+-- itself (`Wiz/Core/Check.lean`, `.refl`) now checks `a` in `Γ⁰` too; its regression is
+-- on the Wiz side (Tests/Check.lean, `check: quantities`), since the surface form was
+-- already covered by G2 here.
 structure P where
   a : Nat
 def lem0 (0 n : Nat) : n = n := refl n

@@ -44,8 +44,10 @@ that starts failing again is exactly what it is there for).
 The library is written the way this toolchain can write it: composition is `f ≫ g`
 where the category comes from the type of `f`, universe levels and implicit arguments
 are inferred, and `#check` prints the stated type. B1, B5, B6 and B7 (FINDINGS.md) are
-fixed at master `aeaa34ef` (2026-11-14), which is what `flake.nix`/`flake.lock` pin;
-`tests/inference.wiz` keeps them fixed.
+fixed at master `aeaa34ef` (2026-11-14), which is what `flake.nix`/`flake.lock` pin; B3
+is fixed there too (`rfl` at `Category.op (Category.op C) = C`), and B2's surface form
+checks (the kernel rule is a separate Wiz change, so the `{ω}` workaround is gone from
+the unit laws). `tests/inference.wiz` keeps them fixed.
 
 With tower, Wiz's toolchain manager, instead of the flake's `wiz`: `wiz-toolchain`
 names the same commit (master `aeaa34ef`), and tower's `wiz` and `grail` shims pick it

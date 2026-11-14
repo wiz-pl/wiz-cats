@@ -29,18 +29,26 @@ and #230 — and this branch drops their workarounds from `src/Cats`:
 * **B7**: a binder's type is re-evaluated after its holes are solved; the Yoneda binders
   no longer write `D` (one `D := Types` stays for a proof lambda, P14).
 * The same master has #203's proof-erasure change ("a term at a proposition is checked
-  erased"), which is **G2**'s fix. It also makes **B2**'s surface repro check; B2's
+  erased"), which is **G2**'s fix. It also makes **B2**'s surface repro check. B2's
   kernel rule (`.refl` checks its argument in the ambient context) is still the old one
-  and is a separate change. B3 is not re-measured here.
-* Not fixed: B2 (kernel rule; separate), B3, B4 (`max` levels:
-  `eqCongr2.{u, v, max u v}` stays), G1 (Logic's lemmas at `Type`), G3–G8, and the
-  papercuts except as noted (P3/P5 improved: `#check` prints the stated type now, not
-  the computed Σ; P9 still forces `C.comp` inside constructor fields; P11 and P14 stay).
+  at this pin; the fix (`Γ⁰ ⊢ a ⇐ A`, mirrored in the self-hosted kernel) is the Wiz
+  branch `agent/refl-usage` (in this worktree, `agent/cats-b2b3` in the Wiz repo), with
+  its kernel regression in `Tests/Check.lean` (`check: quantities`). Because the surface
+  form was already covered by G2, what changes here is only the `{ω C}`/`{ω D}`
+  workaround in the unit laws' statements.
+* **B3** is fixed at this pin too, and re-measured: `rfl` at
+  `Category.op (Category.op C) = C` takes ~0.7 s (it was killed at over 2 GB, 17 s).
+  `rfl` reads the sides of a computed Σ equation back from the equation before building
+  the Σ (`eqSigmaSides?`, wiz `99d07361`), so the computed form is never quoted.
+* Not fixed: B4 (`max` levels: `eqCongr2.{u, v, max u v}` stays), G1 (Logic's lemmas at
+  `Type`), G3–G8, and the papercuts except as noted (P3/P5 improved: `#check` prints the
+  stated type now, not the computed Σ; P9 still forces `C.comp` inside constructor
+  fields; P11 and P14 stay).
 
-The repro tests record the new state: `b1-levels`, `b5-proj-hole`, `b7-binder-holes`,
-`b2-refl-usage` and `g2-proof-usage` check without errors; `b6-rw-functor` shows the
-rewritten goal. `tests/inference.wiz` checks the four fixed shapes as definitions and
-`#print axioms` them.
+The repro tests record the new state: `b1-levels`, `b3-rfl`, `b5-proj-hole`,
+`b7-binder-holes`, `b2-refl-usage` and `g2-proof-usage` check without errors;
+`b6-rw-functor` shows the rewritten goal. `tests/inference.wiz` checks the fixed shapes
+(B1, B2, B3, B5, B6, B7) as definitions and `#print axioms` them.
 
 ## Bugs
 
@@ -114,30 +122,43 @@ The same happened at the statement level: `F ⋙ Fun.id D = F` with `{D : Catego
 failed before any proof, so the unit laws of functor composition were written with
 `{ω C}`/`{ω D}` (src/Cats/Category.wiz `Fun.id_comp`, `Fun.comp_id`; tests/laws.wiz).
 
-At the pinned toolchain the repro checks: a term whose type is a proposition is checked
-erased (the G2 fix below), which reaches `refl`'s argument too, and the unit laws no
-longer need `{ω}` (they keep it, a harmless leftover). The kernel rule itself is
-unchanged; fixing it is a separate change (`agent/refl-usage`), and B2's statement-level
-form is left to it.
+At the pinned toolchain the surface repro checks: a term whose type is a proposition is
+checked erased (the G2 fix below), which reaches `refl`'s argument too. The kernel rule
+itself is still the old one at this pin; the fix is one line in `Wiz/Core/Check.lean`
+(`Γ⁰ ⊢ a ⇐ A`, the same erased position as an argument to a `0` binder) and its mirror
+in `selfhost/Kernel.wiz` (`.eqRefl`), on the Wiz branch `agent/refl-usage` (also
+`agent/cats-b2b3` in the Wiz repo). Its regression is a direct `infer` in
+`Tests/Check.lean` (`check: quantities`: `refl Unit₁ p.2` under a `0`-quantity pair),
+with the control that a duplicated linear pair is still rejected; the one-field surface
+case is in `Tests/Groups/Language.lean` (`language`).
 
-### B3. `rfl` at an equation of two categories takes over 2 GB (separate; not re-measured)
+Here, the `{ω C}`/`{ω D}` workarounds are gone from `Fun.id_comp` and `Fun.comp_id`:
+their statements project `Fun.id C`, which is what the kernel rule (and the surface G2
+rule) now allows at quantity 0.
+
+### B3. `rfl` at an equation of two categories took over 2 GB (fixed at the pin)
 
 ```
 def Category.op.{u, v} (C : Category.{u, v}) : Category.{u, v} := …   -- src/Cats/Constructions.wiz
-def slow.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := rfl     -- killed: 2 GB, 17 s
+def slow.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := rfl     -- was killed: 2 GB, 17 s
 def fast.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := refl C  -- 0.5 s, 100 MB
 ```
 
-The two sides are convertible (structure η), and `refl C` is accepted at once. What
-blows up is the *computed equation*: `#check Category.op_op` (of the `refl C` version)
-is killed the same way, so it is the quotation of `C.op.op = C` computed to a Σ over the
-seven fields, each with a cast along a `transp` whose motive is the rest of the Σ type,
-which contains the equations of the later fields, and so on: the size grows
-exponentially with the number of dependent fields. The elaborator's `rfl` (13n) reads
+The two sides are convertible (structure η), and `refl C` was accepted at once. What
+blew up was the *computed equation*: `#check Category.op_op` (of the `refl C` version)
+was killed the same way, so it was the quotation of `C.op.op = C` computed to a Σ over
+the seven fields, each with a cast along a `transp` whose motive is the rest of the Σ
+type, which contains the equations of the later fields, and so on: the size grew
+exponentially with the number of dependent fields. The elaborator's `rfl` (13n) read
 the sides back out of that computed equation, hence the difference. (The equation of
-two functors, four fields, already prints as 12 000 characters, G5.) Not in `repro/` (it would take the test runner's memory); the lines above
-reproduce it.
-Here: `refl C`.
+two functors, four fields, already prints as 12 000 characters, G5.)
+
+At `aeaa34ef` this is fixed and re-measured: `rfl` takes ~0.7 s and ~100 MB, and
+`#check Category.op_op` prints at once. For a computed Σ equation the elaborator reads
+the sides back from the equation before it builds the Σ (`eqSigmaSides?`, wiz
+`99d07361`; the same read-back that proves `s = s`), so the computed form is never
+quoted. (`repro/b3-rfl.wiz` checks both spellings; `tests/inference.wiz`, `b3`, keeps
+it.) Here: `rfl`, no argument.
 
 ### B4. The level unifier doesn't normalise: `?u+1 = max (u+1) (u+1)` fails
 
@@ -295,7 +316,8 @@ equation). A cheap improvement: regularity for the non-dependent case (the cast
 
 `ι ≫ f = ι ≫ g` in `Types`, with `ι = fun p => p.1` on `E = (a : A) × (f a = g a)`,
 computes to `(0 p : E) → f p.1 = g p.1` (funext binds `p` at 0). The obvious proof
-`fun p => p.2` is rejected ("cannot project p.2 … p, which has quantity 0", B2 again);
+`fun p => p.2` is rejected ("cannot project p.2 … p, which has quantity 0"; the
+projection rule again, not B2's `refl` case);
 `let 0 (x, e) := p; e` gives `e : P x`, not `P p.1` (the tuple `let` is not dependent);
 an identity `(0 h : P) → P := h` is rejected ("h declared with quantity 0 but used 1").
 What works: a function with an *unerased* binder, `sigmaProp : (p : (a : A) × P a) → P p.1
@@ -407,6 +429,7 @@ in the library would make `Types.{u} ⥤ Types.{v}` available for every instance
   (structure η in conversion).
 * Checking is fast. `wiz check --no-cache` (rough single runs, each including its
   imports): Eq 1.4 s, Category 1.6 s, Constructions 1.9 s, Limits 2.4 s, Adjunction
-  4.3 s, Yoneda 2.5 s, Examples 2.6 s, all under 105 MB. The one blow-up is B3.
+  4.3 s, Yoneda 2.5 s, Examples 2.6 s, all under 105 MB. B3's `rfl` at
+  `Category.op (Category.op C) = C` is ~0.7 s (it was over 2 GB).
 * `#print axioms`: everything is axiom-free except `UnitCounit.round` (`castRefl`).
 * `rw` works on goals about morphisms of a bundled category (`rw (C.comp_id f)`).

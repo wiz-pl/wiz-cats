@@ -39,8 +39,19 @@ def b7.{u, v} {ω C : Category.{u, v}} {X : C.Obj} {P : Category.op C ⥤ Types.
     α.app Y (C.comp f (C.id X)) = P.map f (α.app X (C.id X)) :=
   α.naturality f (C.id X)
 
+-- B2: the unit law's *statement* projects `Fun.id C` at an implicit `{C : Category}`
+-- (quantity 0). `refl`'s argument is erased (a Wiz-side kernel fix), so no `{ω C}`.
+def b2.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}}
+    (F : C ⥤ D) : Fun.comp (Fun.id C) F = F := rfl
+
+-- B3: `rfl` at an equation of two categories, written as stated. It used to compute the
+-- whole equation (a Σ of casts, over 2 GB); now the sides are used as written.
+def b3.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := rfl
+
 -- The regressions are definitions, not axioms.
 #print axioms b1
 #print axioms b5use
 #print axioms b6
 #print axioms b7
+#print axioms b2
+#print axioms b3

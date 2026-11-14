@@ -8,8 +8,9 @@ def Category.op.{u, v} (C : Category.{u, v}) : Category.{u, v} :=
     (fun f => C.comp_id f) (fun f => C.id_comp f) (fun f g h => eqSymm (C.assoc h g f))
 
 -- taking the opposite twice gives the category back, definitionally
--- (`refl C`: `rfl` takes over 2 GB here, FINDINGS.md, B3; `C.op.op` is P10)
-def Category.op_op.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := refl C
+-- (`rfl`: on older toolchains this computed the whole equation and took over 2 GB,
+-- FINDINGS.md, B3; `C.op.op` is P10)
+def Category.op_op.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := rfl
 
 -- ## Products
 

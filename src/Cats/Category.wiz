@@ -48,11 +48,12 @@ infixr:80 " ⋙ " => Fun.comp
 
 -- Functor composition is associative and `Fun.id` is a two-sided unit, definitionally
 -- (structure η: an equation of functors computes to the equations of `obj` and `map`;
--- the laws are proofs and drop out). The laws that mention `Fun.id C` bind `C` at ω:
--- projecting `C` in the *statement* is refused at quantity 0 (FINDINGS.md, B2).
-def Fun.id_comp.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}}
+-- the laws are proofs and drop out). The unit laws write plain `{C : Category}`: the
+-- statement projects `Fun.id C`, which needs B2's erased `refl` argument
+-- (FINDINGS.md, B2).
+def Fun.id_comp.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}}
     (F : C ⥤ D) : Fun.comp (Fun.id C) F = F := rfl
-def Fun.comp_id.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}}
+def Fun.comp_id.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}}
     (F : C ⥤ D) : Fun.comp F (Fun.id D) = F := rfl
 def Fun.comp_assoc.{u₁, v₁, u₂, v₂, u₃, v₃, u₄, v₄}
     {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} {E : Category.{u₃, v₃}} {F : Category.{u₄, v₄}}
