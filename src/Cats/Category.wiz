@@ -1,9 +1,11 @@
 import Cats.Eq
 -- Categories, functors, natural transformations (DESIGN.md).
 --
--- The laws take their arguments at quantity 0: a proof that passes a variable to an
--- unerased argument uses it, even though the proof itself is erased (FINDINGS.md, G2), so
--- with ω binders every proof about an implicit (erased) functor would be rejected.
+-- The laws take their arguments at quantity 0. That used to be forced: a proof that
+-- passes a variable to an unerased argument counted as a use of it, even though the
+-- proof itself is erased (FINDINGS.md, G2), so with ω binders every proof about an
+-- implicit (erased) functor was rejected. Wiz now checks a term at a proposition erased
+-- (G2 fixed); the 0-binders are kept as the natural statements.
 
 structure Category.{u, v} where
   Obj : Type u
@@ -16,8 +18,9 @@ structure Category.{u, v} where
   assoc : {W X Y Z : Obj} → (0 f : Hom W X) → (0 g : Hom X Y) → (0 h : Hom Y Z) →
     comp (comp f g) h = comp f (comp g h)
 
--- `f ≫ g`, with the category found from the type of `f`. Unusable today: the category
--- is not found (FINDINGS.md, B5), so the library writes `(f ≫ g)`.
+-- `f ≫ g`, with the category found from the type of `f` (wiz #239: FINDINGS.md, B5).
+-- (Inside a constructor field whose expected type still has holes it is not found; there
+-- the library writes `C.comp f g`, FINDINGS.md, P9.)
 def Category.cmp.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (f : C.Hom X Y) (g : C.Hom Y Z) : C.Hom X Z :=
   C.comp f g
 infixr:80 " ≫ " => Category.cmp
@@ -38,7 +41,7 @@ def Fun.id.{u, v} (C : Category.{u, v}) : C ⥤ C :=
 def Fun.comp.{u₁, v₁, u₂, v₂, u₃, v₃} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}} {E : Category.{u₃, v₃}}
     (F : C ⥤ D) (G : D ⥤ E) : C ⥤ E :=
   Fun.mk (fun X => G.obj (F.obj X)) (fun f => G.map (F.map f))
-    -- (the explicit levels: FINDINGS.md, B1)
+    -- (the levels are inferred: FINDINGS.md, B1)
     (fun X => eqTrans (eqCongr (fun h => G.map h) (F.map_id X)) (G.map_id (F.obj X)))
     (fun f g => eqTrans (eqCongr (fun h => G.map h) (F.map_comp f g)) (G.map_comp (F.map f) (F.map g)))
 infixr:80 " ⋙ " => Fun.comp

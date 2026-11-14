@@ -1,0 +1,4 @@
+tests/inference.wiz:43:1: info: 'b1' does not depend on any axioms
+tests/inference.wiz:44:1: info: 'b5use' does not depend on any axioms
+tests/inference.wiz:45:1: info: 'b6' does not depend on any axioms
+tests/inference.wiz:46:1: info: 'b7' does not depend on any axioms

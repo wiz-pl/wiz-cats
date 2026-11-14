@@ -95,8 +95,9 @@ def Adjunction.toUnitCounit.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v�
 --
 -- `f : F X ⟶ Y` corresponds to `η X ≫ G f`, and `g : X ⟶ G Y` to `F g ≫ ε Y`.
 
--- (term proofs: `rw` fails here with "rewrite: type mismatch, expected: C ⥤ D,
--- inferred: C ⥤ D", FINDINGS.md, B6)
+-- (term proofs: `rw` used to fail here with "rewrite: type mismatch, expected: C ⥤ D,
+-- inferred: C ⥤ D" (FINDINGS.md, B6, fixed in wiz #239); it still does not close a
+-- reflexive goal itself, FINDINGS.md, P11)
 def UnitCounit.from_to.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}} {ω F : C ⥤ D} {ω G : D ⥤ C}
     (U : UnitCounit F G) {X : C.Obj} {Y : D.Obj} (0 f : D.Hom (F.obj X) Y) :
     F.map (U.unit.app X ≫ G.map f) ≫ U.counit.app Y = f :=

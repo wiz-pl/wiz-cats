@@ -78,13 +78,15 @@ def Types.product.{u} (A B : Type u) : Product Types.{u} A B :=
     (fun f g => rfl) (fun f g => rfl) (fun h => rfl)
 
 -- the proofs in the elements of a subtype. The equation `ι ≫ f = ι ≫ g` in `Types`
--- computes to `(0 p : E) → f p.1 = g p.1`, whose erased `p` can't be projected even in a
--- proof (FINDINGS.md, B2); this function, with an unerased binder, is accepted for it
--- by subtyping (a Π that is a proposition ignores quantities).
-def sigmaProp.{u} {A : Type u} {0 P : A → Prop} : (p : (a : A) × P a) → P p.1 := fun p => p.2
+-- computes to `(0 p : E) → f p.1 = g p.1`, whose binder is erased; the projection needs
+-- an unerased `p`, so it is in `sigmaPropAux`, and `sigmaProp` passes its erased `p` to
+-- it. (A term at a proposition is checked erased, FINDINGS.md, G2, so the argument is
+-- not a use; the kernel accepts the Π by subtyping, its codomain being a proposition.)
+def sigmaPropAux.{u} {A : Type u} {0 P : A → Prop} (p : (a : A) × P a) : P p.1 := p.2
+def sigmaProp.{u} {A : Type u} {0 P : A → Prop} : (0 p : (a : A) × P a) → P p.1 := fun p => sigmaPropAux p
 
--- (the binder types are written: the expected types of the later fields still have a
--- hole for `obj`, FINDINGS.md, P9)
+-- (the parameters `C`, `f`, `g` are passed by name: the expected types of the later
+-- fields still have holes for the earlier ones, FINDINGS.md, P9)
 def Types.equaliser.{u} {A B : Type u} (f g : A → B) : Equaliser Types.{u} f g :=
   let E : Type u := (a : A) × (f a = g a);
   Equaliser.mk (C := Types) (f := f) (g := g) E (fun p => p.1) (sigmaProp (P := fun a => f a = g a))

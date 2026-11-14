@@ -1,10 +1,12 @@
 -- test: check
 import Prelude
--- FINDINGS.md, B2: `bad` is rejected ("cannot project p.1 … quantity 0"), `ok` is not.
--- (Minimal: one field is enough.) The difference is where the projection is checked:
+-- FINDINGS.md, B2: `bad` was rejected ("cannot project p.1 … quantity 0"), `ok` was not.
+-- (Minimal: one field is enough.) The difference was where the projection is checked:
 -- `refl` checks its argument in the unerased context, while an argument at quantity 0
 -- (`lem0 p.a`) is checked in the erased fragment, where a 0-quantity structure may be
--- projected.
+-- projected. At the pinned toolchain both check: a term whose type is a proposition is
+-- checked erased (the G2 fix), which reaches `refl`'s argument too. The kernel rule
+-- (`Wiz/Core/Check.lean`, `.refl`) is still the old one; that is a separate change.
 structure P where
   a : Nat
 def lem0 (0 n : Nat) : n = n := refl n

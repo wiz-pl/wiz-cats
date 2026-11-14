@@ -1,6 +1,7 @@
 import Logic
 -- Every proof argument is at quantity 0: proofs are irrelevant, and a proof passed to an
--- unerased argument counts as a use of every variable in it (FINDINGS.md, G2).
+-- unerased argument used to count as a use of every variable in it (FINDINGS.md, G2,
+-- fixed in wiz: a term at a proposition is checked erased; the 0-binders stay).
 -- Equality lemmas at any universe. lib/Logic.wiz has `Eq.symm`, `Eq.trans` and
 -- `Eq.congrArg` only at `Type` (FINDINGS.md, G1); categories need them at `Type u`.
 -- `transp` is the eliminator (J into propositions); these are its usual shapes.

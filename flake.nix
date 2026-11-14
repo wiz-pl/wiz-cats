@@ -4,7 +4,7 @@
   inputs = {
     # The Wiz toolchain (wiz, grail, the standard library). flake.lock pins the commit;
     # `wiz-toolchain` names the same commit for tower users.
-    wiz.url = "github:wiz-pl/wiz/50cd3e7691dd7e63ff72c33aa24b68a032179c8d";
+    wiz.url = "github:wiz-pl/wiz/aeaa34ef8527c2a72e703959742f7a99d9c03fc9";
     # The same nixpkgs as the toolchain, so its binaries are shared.
     nixpkgs.follows = "wiz/nixpkgs";
   };
