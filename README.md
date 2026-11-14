@@ -41,7 +41,7 @@ A `repro/` test that fails means Wiz's behaviour changed, probably because the f
 was fixed: the test pins today's error message.
 
 With tower, Wiz's toolchain manager, instead of the flake's `wiz`: `wiz-toolchain`
-names the commit this repository is developed against (master 9596a24, the commit
+names the commit this repository is developed against (master 50cd3e7, the commit
 `flake.lock` pins too), and tower's `wiz` and `grail` shims pick it up in this
 directory.
 

@@ -1,3 +1,4 @@
 tests/examples.wiz:7:1: info: .some 42
 tests/examples.wiz:8:1: info: .cons 2 (.cons 4 (.cons 6 .nil))
 tests/examples.wiz:9:1: info: 5
+tests/examples.wiz:11:1: info: 0
