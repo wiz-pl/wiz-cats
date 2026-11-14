@@ -83,3 +83,8 @@ def Nat.add_assoc' : (a b c : Nat) → Nat.add (Nat.add a b) c = Nat.add a (Nat.
 -- are proved with unerased ones and passed as they are: subtyping, FINDINGS.md, G7)
 def Nat.addMonoid : Monoid.{0} :=
   Monoid.mk Nat 0 (fun a b => Nat.add a b) (fun a => rfl) Nat.add_zero' Nat.add_assoc'
+
+-- the zero homomorphism of the additive monoid: a functor that maps every morphism to
+-- `one` (a small example that `Monoid.Hom.toFun` is the functor it claims to be)
+def Nat.zeroHom : Monoid.Hom Nat.addMonoid Nat.addMonoid :=
+  Monoid.Hom.mk (fun _ => 0) rfl (fun a b => rfl)

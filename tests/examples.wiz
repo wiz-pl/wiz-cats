@@ -7,3 +7,5 @@ import Cats.Examples
 #eval (Option.functor).map (fun n => Nat.add n 1) (Option.some 41)
 #eval (List.functor).map (fun n => Nat.add n n) [1, 2, 3]
 #eval (Monoid.toCategory Nat.addMonoid).comp (X := ()) (Y := ()) (Z := ()) 2 3
+-- a homomorphism is a functor: the zero homomorphism maps every morphism to `one`
+#eval Fun.map (Monoid.Hom.toFun Nat.zeroHom) (X := ()) (Y := ()) 5

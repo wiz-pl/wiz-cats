@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+
+      # The Wiz CI pushes its builds here; pulling is enough for us.
+      - uses: cachix/cachix-action@v16
+        with:
+          name: badlydrawnwizards
+
+      # `wiz check` is the light path: one module at a time, with grail's module roots.
+      # repro/ is not checked here: those tests expect an error and `grail test` runs
+      # them against tests/*.expected.
+      - name: Check the modules
+        run: |
+          nix develop --command bash -euo pipefail -c '
+            for f in src/Cats/*.wiz; do wiz check -I src "$f"; done
+            for f in tests/*.wiz; do wiz check -I src "$f"; done
+          '
+
+      - name: Build and test
+        run: nix develop --command grail test

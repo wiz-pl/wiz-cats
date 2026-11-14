@@ -1,6 +1,6 @@
 # Findings
 
-What formalising category theory showed about Wiz, as of wiz master `9596a24`
+What formalising category theory showed about Wiz, as of wiz master `50cd3e7`
 (2026-11-12). Each entry: what happened, a minimal reproducer (the files under
 `repro/` are the reproducers, each checked with `wiz check -I src repro/NAME.wiz`), and
 what this library does instead. Severity:
