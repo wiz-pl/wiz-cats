@@ -30,17 +30,17 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1794440653,
-        "narHash": "sha256-BD+InLOKiH2DTyFvLGByP0vY3RsxSh1od+ODoRUJGFA=",
+        "lastModified": 1794662098,
+        "narHash": "sha256-KDc4JNyzm/MDHbhwjPXYq5If80LSq7x7N5CKmZVRW2w=",
         "owner": "wiz-pl",
         "repo": "wiz",
-        "rev": "9596a241388854f523fb21d8fef8c0ebed67440d",
+        "rev": "aeaa34ef8527c2a72e703959742f7a99d9c03fc9",
         "type": "github"
       },
       "original": {
         "owner": "wiz-pl",
         "repo": "wiz",
-        "rev": "9596a241388854f523fb21d8fef8c0ebed67440d",
+        "rev": "aeaa34ef8527c2a72e703959742f7a99d9c03fc9",
         "type": "github"
       }
     }

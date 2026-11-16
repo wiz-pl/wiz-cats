@@ -1,0 +1,10 @@
+-- test: check
+import Cats.Constructions
+-- FINDINGS.md, B3: `rfl` at `Category.op (Category.op C) = C` used to compute the whole
+-- equation (a Σ over the seven fields of `Category`, with casts; over 2 GB, 17 s). The
+-- two sides are definitionally equal, and `rfl` now uses them as written: fast. (`refl C`
+-- was the workaround; it is no slower now, but `rfl` needs no argument.)
+def slow.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := rfl
+def fast.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := refl C
+#print axioms slow
+#print axioms fast

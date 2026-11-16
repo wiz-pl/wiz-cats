@@ -1,0 +1,3 @@
+tests/laws.wiz:6:1: info: 'Fun.id_comp' does not depend on any axioms
+tests/laws.wiz:7:1: info: 'Fun.comp_id' does not depend on any axioms
+tests/laws.wiz:8:1: info: 'Fun.comp_assoc' does not depend on any axioms

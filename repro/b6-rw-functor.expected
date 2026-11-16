@@ -1,7 +1,14 @@
-repro/b6-rw-functor.wiz:8:3: error: rewrite: type mismatch
-  expected: C ⥤ D
-  inferred: C ⥤ D
-repro/b6-rw-functor.wiz:12:30: error: unsolved goals:
+repro/b6-rw-functor.wiz:15:78: error: unsolved goals:
+C : Category
+D : Category
+F : C ⥤ D
+G : D ⥤ C
+U : UnitCounit C D F G
+X : C.1
+Y : D.1
+f : D.2.1 (F.1 X) Y
+⊢ D.2.2.2.1 (F.1 ((Fun.id C).1 X)) (F.1 (G.1 Y)) ((Fun.id D).1 Y) (D.2.2.2.1 (F.1 ((Fun.id C).1 X)) (F.1 ((F ⋙ G).1 X)) (F.1 (G.1 Y)) (F.2.1 ((Fun.id C).1 X) ((F ⋙ G).1 X) (U.1.1 X)) (F.2.1 ((F ⋙ G).1 X) (G.1 Y) (G.2.1 (F.1 X) Y f))) (U.2.1.1 Y) = f
+repro/b6-rw-functor.wiz:19:30: error: unsolved goals:
 C : Category
 X : C.1
 Y : C.1

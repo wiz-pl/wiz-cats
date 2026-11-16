@@ -15,7 +15,7 @@ structure LawfulFunctor (f : Type → Type) [i : Functor f] where
     Functor.map (fun a => h (g a)) x = Functor.map h (Functor.map g x)
 
 def LawfulFunctor.toFun (f : Type → Type) [i : Functor f] (L : LawfulFunctor f) : Types.{0} ⥤ Types.{0} :=
-  Fun.mk f (fun g => Functor.map g) (fun X => fun (0 x : f X) => L.map_id X x) (fun g h => fun (0 x : f _) => L.map_comp _ _ _ g h x)
+  Fun.mk f (fun g => Functor.map g) (fun X => fun (0 x) => L.map_id X x) (fun g h => fun (0 x) => L.map_comp _ _ _ g h x)
 
 -- ### Option
 
@@ -83,3 +83,8 @@ def Nat.add_assoc' : (a b c : Nat) → Nat.add (Nat.add a b) c = Nat.add a (Nat.
 -- are proved with unerased ones and passed as they are: subtyping, FINDINGS.md, G7)
 def Nat.addMonoid : Monoid.{0} :=
   Monoid.mk Nat 0 (fun a b => Nat.add a b) (fun a => rfl) Nat.add_zero' Nat.add_assoc'
+
+-- the zero homomorphism of the additive monoid: a functor that maps every morphism to
+-- `one` (a small example that `Monoid.Hom.toFun` is the functor it claims to be)
+def Nat.zeroHom : Monoid.Hom Nat.addMonoid Nat.addMonoid :=
+  Monoid.Hom.mk (fun _ => 0) rfl (fun a b => rfl)

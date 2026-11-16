@@ -67,9 +67,10 @@ and local notation where it helps.
 
 Composition is in diagrammatic order, `comp f g : Hom X Z` for `f : Hom X Y`,
 `g : Hom Y Z` (`f ≫ g` in Mathlib's notation), so the implicit objects come in the
-order the morphisms are written. The notation itself is defined but not used: with a
-bundled category the elaborator can't find `C` from `f : C.Hom X Y` (FINDINGS.md, B5),
-so the library writes `C.comp f g`.
+order the morphisms are written. The notation is used wherever the expected type is
+known: the elaborator finds the category from `f : C.Hom X Y` (FINDINGS.md, B5, fixed
+in wiz #239). Inside a constructor field whose expected type still has holes it can't
+(FINDINGS.md, P9), so `Category.yo` and `Category.yonedaMap` write `C.comp`.
 
 The laws (`id_comp`, `comp_id`, `assoc`) are fields whose types are equations, so they
 are propositions, so:
@@ -117,11 +118,26 @@ a variable to an unerased argument uses it. So the library follows three rules:
   unerased binders, passed where an erased one is expected: the kernel accepts it by
   subtyping, since a Π that is a proposition ignores quantities.
 
-## Limits, adjunctions, Yoneda
+## Limits, colimits, adjunctions, Yoneda
 
 * A limit is a structure: the object, the cone's morphisms, the lifting function and its
   equations, and uniqueness (`uniq : (0 h : Hom Z obj) → h = pair (h ≫ fst) (h ≫ snd)`).
   Uniqueness up to isomorphism is proved for terminal objects and products.
+* A colimit is the same structure with the arrows reversed, and is written directly
+  rather than as a limit in the opposite category: an initial object, a binary
+  coproduct, a coequaliser, a pushout. There is no general theory of diagrams and
+  (co)cones: those four shapes are what the limits already cover. Uniqueness up to
+  isomorphism is proved for initial objects and coproducts.
+* `Category.op` is a `def` whose projections compute, so a limit in `C` *is* a colimit
+  in `Cᵒᵖ` field for field (`Terminal.op`, `Product.op`, `Equaliser.op`,
+  `Pullback.op`), and conversely. This is why the dualities need no transport: the only
+  change is the direction of `comp`, which is definitional.
+* The initial object of `Types` is `Empty`, and the coproduct of two types is a local
+  universe-polymorphic `Sum` (`Sum.inl`/`Sum.inr`, `Sum.elim`). The coproduct's
+  uniqueness proof is pointwise and the point is erased, so `Sum.eta` does the case
+  split in a helper with an unerased argument (FINDINGS.md, G7). Coequalisers and
+  pushouts in `Types` would need a quotient, which Wiz does not have (FINDINGS.md, G9);
+  only their universal properties are here.
 * An adjunction is primarily the natural hom-bijection (`to`, `from`, the two inverse
   laws, naturality of `to` on both sides; naturality of `from` is derived). The
   unit-counit form is a second structure; each converts into the other.

@@ -1,0 +1,57 @@
+-- test: check
+import Cats.Eq
+import Cats.Yoneda
+import Cats.Adjunction
+-- Regressions for the findings this branch closes (FINDINGS.md, B1, B5, B6, B7; wiz
+-- #239/#230). Each definition below is written the way the library can write it now,
+-- with no workaround; if a finding comes back, this file stops checking.
+
+-- B1: universe levels fixed only by an implicit argument's type. `S2.mk`'s argument
+-- mentions `eqSymm` at `v`, which nothing but `B`'s type determines.
+structure Box.{u, v} where
+  T : Type u
+  R : T → T → Type v
+  r : (x : T) → R x x
+structure S2.{u, v} (B : Box.{u, v}) where
+  law : (x : B.T) → B.r x = B.r x
+def b1.{u, v} (B : Box.{u, v}) (s : S2 B) : S2 B := S2.mk (fun x => eqSymm (s.law x))
+
+-- B5: the category is found from a morphism equation, and `≫` from the type of `f`; no
+-- `(C := C)`.
+def b5.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z)
+    (0 h : C.Hom X Z) (0 e : f ≫ g = h) : h = f ≫ g := eqSymm e
+def b5use.{u, v} {ω C : Category.{u, v}} {X Y Z : C.Obj} (0 f : C.Hom X Y) (0 g : C.Hom Y Z)
+    (0 h : C.Hom X Z) (0 e : f ≫ g = h) : h = f ≫ g := b5 _ _ _ e
+
+-- B6: `rw` with a functor law whose arguments are at the objects of a composite functor
+-- (`U.unit.app X : Hom ((Fun.id C).obj X) ((F ⋙ G).obj X)`).
+def b6.{u₁, v₁, u₂, v₂} {ω C : Category.{u₁, v₁}} {ω D : Category.{u₂, v₂}}
+    {ω F : C ⥤ D} {ω G : D ⥤ C} (U : UnitCounit F G) {X : C.Obj} {Y : D.Obj}
+    (0 f : D.Hom (F.obj X) Y) :
+    F.map (C.comp (U.unit.app X) (G.map f)) = D.comp (F.map (U.unit.app X)) (F.map (G.map f)) := by
+  rw (F.map_comp (U.unit.app X) (G.map f))
+  rfl
+
+-- B7: a hole in a binder's type is solved before the body needs it; here the `D` of
+-- `NatTrans` is found from `P : Category.op C ⥤ Types`, with no `(D := Types)`.
+def b7.{u, v} {ω C : Category.{u, v}} {X : C.Obj} {P : Category.op C ⥤ Types.{v}}
+    (α : NatTrans (Category.yo C X) P) {Y : C.Obj} (f : C.Hom Y X) :
+    α.app Y (C.comp f (C.id X)) = P.map f (α.app X (C.id X)) :=
+  α.naturality f (C.id X)
+
+-- B2: the unit law's *statement* projects `Fun.id C` at an implicit `{C : Category}`
+-- (quantity 0). `refl`'s argument is erased (a Wiz-side kernel fix), so no `{ω C}`.
+def b2.{u₁, v₁, u₂, v₂} {C : Category.{u₁, v₁}} {D : Category.{u₂, v₂}}
+    (F : C ⥤ D) : Fun.comp (Fun.id C) F = F := rfl
+
+-- B3: `rfl` at an equation of two categories, written as stated. It used to compute the
+-- whole equation (a Σ of casts, over 2 GB); now the sides are used as written.
+def b3.{u, v} (C : Category.{u, v}) : Category.op (Category.op C) = C := rfl
+
+-- The regressions are definitions, not axioms.
+#print axioms b1
+#print axioms b5use
+#print axioms b6
+#print axioms b7
+#print axioms b2
+#print axioms b3

@@ -1,5 +1,6 @@
 -- test: check
 import Prelude
--- FINDINGS.md, G2: `r` is rejected ("n declared with quantity 0 but used ω").
+-- FINDINGS.md, G2: `r` was rejected ("n declared with quantity 0 but used ω").
+-- Fixed in wiz (a proof is checked erased, both kernels): everything here checks.
 def lem (n : Nat) : n = n := refl n
 def r {0 n : Nat} : n = n := lem n

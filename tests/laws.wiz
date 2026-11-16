@@ -1,0 +1,8 @@
+-- test: check
+import Cats.Category
+-- the functor laws: composition is associative and `Fun.id` is a two-sided unit.
+-- (Both unit laws write plain `{C}`/`{D}`: their statements project `Fun.id C`/`Fun.id D`,
+-- which B2's erased `refl` argument allows; see also tests/inference.wiz.)
+#print axioms Fun.id_comp
+#print axioms Fun.comp_id
+#print axioms Fun.comp_assoc
