@@ -1,6 +1,6 @@
 # Findings
 
-What formalising category theory showed about Wiz, as of wiz master `aeaa34ef`
+What formalising category theory showed about Wiz, as of wiz master `4ad29792`
 (2026-11-14). Each entry: what happened, a minimal reproducer (the files under
 `repro/` are the reproducers, each checked with `wiz check -I src repro/NAME.wiz`), and
 what this library does instead. Severity:
@@ -13,7 +13,7 @@ Timings are rough (single runs through `light` on a shared machine), not measure
 
 ## Status at the pinned toolchain (2026-11-14)
 
-The library is pinned to wiz master `aeaa34ef` (`flake.nix`/`flake.lock` and
+The library is pinned to wiz master `4ad29792` (`flake.nix`/`flake.lock` and
 `wiz-toolchain`). B1, B5, B6 and B7 are fixed there — by #239 (`agent/dogfood-fixes`)
 and #230 — and this branch drops their workarounds from `src/Cats`:
 
